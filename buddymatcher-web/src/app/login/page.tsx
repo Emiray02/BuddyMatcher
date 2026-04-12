@@ -11,7 +11,7 @@ export default function LoginPage() {
   const t = text[locale];
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ export default function LoginPage() {
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ identifier, password }),
     });
     const data = await response.json();
 
@@ -52,10 +52,10 @@ export default function LoginPage() {
         <form className="space-y-4" onSubmit={onSubmit}>
           <input
             className="w-full rounded-xl border border-black/20 bg-white/90 px-4 py-3"
-            placeholder={t.email}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
+            placeholder="Kullanici adi veya e-posta"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            type="text"
             required
           />
           <input
