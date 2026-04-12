@@ -6,18 +6,26 @@ type PasswordResetCodeMail = {
 };
 
 function getMailConfig() {
-  const host = process.env.SMTP_HOST;
-  const portValue = process.env.SMTP_PORT;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const rawHost = process.env.SMTP_HOST?.trim();
+  const rawPort = process.env.SMTP_PORT?.trim();
+  const rawUser = process.env.SMTP_USER?.trim();
+  const rawPass = process.env.SMTP_PASS?.trim();
 
-  if (!host || !portValue || !user || !pass) {
+  const inferredGmailHost = rawUser?.toLowerCase().endsWith("@gmail.com") ? "smtp.gmail.com" : undefined;
+  const host = rawHost || inferredGmailHost;
+  const user = rawUser;
+  const pass = rawHost?.toLowerCase().includes("gmail") || inferredGmailHost
+    ? rawPass?.replace(/\s+/g, "")
+    : rawPass;
+
+  if (!host || !user || !pass) {
     return null;
   }
 
-  const port = Number(portValue);
-  const secure = (process.env.SMTP_SECURE ?? "false").toLowerCase() === "true";
-  const from = process.env.SMTP_FROM ?? "noreply@istkon26.com";
+  const port = Number(rawPort || (host === "smtp.gmail.com" ? "587" : "587"));
+  const secureEnv = process.env.SMTP_SECURE?.trim();
+  const secure = secureEnv ? secureEnv.toLowerCase() === "true" : port === 465;
+  const from = process.env.SMTP_FROM?.trim() || user;
 
   return {
     host,
@@ -40,6 +48,8 @@ export async function sendPasswordResetCodeMail({ to, code }: PasswordResetCodeM
     secure: config.secure,
     auth: config.auth,
   });
+
+  await transporter.verify();
 
   await transporter.sendMail({
     from: config.from,

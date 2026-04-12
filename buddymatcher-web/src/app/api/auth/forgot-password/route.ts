@@ -56,6 +56,25 @@ export async function POST(request: Request) {
         );
       }
 
+      const smtpCode =
+        typeof mailError === "object" && mailError !== null && "code" in mailError
+          ? String((mailError as { code?: unknown }).code ?? "")
+          : "";
+
+      if (smtpCode === "EAUTH") {
+        return NextResponse.json(
+          { error: "SMTP kimlik dogrulamasi basarisiz. SMTP_USER ve SMTP_PASS degerlerini kontrol edin." },
+          { status: 500 },
+        );
+      }
+
+      if (smtpCode === "ECONNECTION" || smtpCode === "ETIMEDOUT" || smtpCode === "ESOCKET") {
+        return NextResponse.json(
+          { error: "SMTP sunucusuna baglanilamadi. SMTP_HOST, SMTP_PORT ve SMTP_SECURE ayarlarini kontrol edin." },
+          { status: 500 },
+        );
+      }
+
       return NextResponse.json({ error: "Dogrulama kodu gonderilemedi" }, { status: 500 });
     }
 
