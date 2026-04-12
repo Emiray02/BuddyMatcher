@@ -308,7 +308,7 @@ export default function DashboardPage() {
     setMessage(t.photoSelected);
   }
 
-  async function saveProfile() {
+  async function saveProfile(closePrivateAnswersModalOnSuccess = false) {
     const response = await fetch("/api/profile", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -339,8 +339,11 @@ export default function DashboardPage() {
       return;
     }
 
-    setMessage(t.saved);
     await loadData();
+    setMessage(t.saved);
+    if (closePrivateAnswersModalOnSuccess) {
+      setShowPrivateAnswersModal(false);
+    }
   }
 
   async function logout() {
@@ -757,7 +760,7 @@ export default function DashboardPage() {
                       </div>
                     </section>
 
-                    <button className="btn-primary w-full px-4 py-3" onClick={saveProfile}>{t.saveAll}</button>
+                    <button className="btn-primary w-full px-4 py-3" onClick={() => void saveProfile(true)}>{t.saveAll}</button>
                   </div>
                 </div>
               </div>
