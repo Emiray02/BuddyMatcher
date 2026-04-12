@@ -12,12 +12,11 @@ const registerSchema = z.object({
 });
 
 function isAdminEmail(email: string) {
-  const raw = process.env.ADMIN_EMAILS ?? "";
-  const whitelist = raw
-    .split(",")
-    .map((x) => x.trim().toLowerCase())
-    .filter(Boolean);
-  return whitelist.includes(email.toLowerCase());
+  const adminEmail = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
+  if (!adminEmail) {
+    return false;
+  }
+  return email.toLowerCase() === adminEmail;
 }
 
 export async function POST(request: Request) {

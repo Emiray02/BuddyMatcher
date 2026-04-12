@@ -51,9 +51,15 @@ Uygulama: http://localhost:3000
 
 ## Admin Yetkisi
 
-`.env` icinde `ADMIN_EMAILS` alanina virgulle admin e-postalarini ekleyebilirsin.
+`.env` icinde asagidaki alanlari tanimla:
 
-Kayit olan kullanicinin e-postasi bu listede ise rol `ADMIN` olur.
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
+- `ADMIN_EMAIL`
+
+Giris ekraninda `ADMIN_USERNAME` + `ADMIN_PASSWORD` ile giris yapildiginda admin hesabi otomatik olusturulur veya admin olarak guncellenir.
+
+Ek olarak, normal kayit olan bir kullanici `ADMIN_EMAIL` ile ayni e-postayi kullanirsa rol `ADMIN` olur.
 
 ## CSV Formati
 
