@@ -15,7 +15,7 @@ export function LanguageSelect({ locale, onChange, label = "Language" }: Languag
       <select
         value={locale}
         onChange={(e) => onChange(e.target.value as Locale)}
-        className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 outline-none transition focus:border-blue-400"
+        className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 outline-none transition focus:border-amber-400"
       >
         <option value="tr">Turkce</option>
         <option value="de">Deutsch</option>

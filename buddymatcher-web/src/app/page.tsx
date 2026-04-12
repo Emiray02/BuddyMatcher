@@ -17,8 +17,7 @@ export default function Home() {
           <div className="orb orb-a" />
           <div className="orb orb-b" />
 
-          <div className="mb-7 flex flex-wrap items-center justify-between gap-3 text-left">
-            <p className="chip">{t.appName}</p>
+          <div className="mb-7 flex justify-end">
             <LanguageSelect locale={locale} onChange={setLocale} label={t.language} />
           </div>
 
@@ -33,9 +32,6 @@ export default function Home() {
             </Link>
             <Link href="/register" className="btn-ghost px-6 py-3 text-center">
               {t.register}
-            </Link>
-            <Link href="/participants" className="btn-ghost px-6 py-3 text-center">
-              {t.participantsNav}
             </Link>
           </div>
         </main>

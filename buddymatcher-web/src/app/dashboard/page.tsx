@@ -325,7 +325,6 @@ export default function DashboardPage() {
         <header className="panel mb-5 p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="chip mb-2">{t.appName}</p>
               <h1 className="text-3xl text-slate-900 sm:text-4xl">{t.dashboard}</h1>
               <p className="muted mt-1 text-sm">{user.name} - {user.email}</p>
             </div>
@@ -388,7 +387,7 @@ export default function DashboardPage() {
                     <label className="block" key={field}>
                       <div className="mb-1 flex items-center justify-between text-sm text-slate-700">
                         <span>{labels[field]}</span>
-                        <span className="font-semibold text-blue-700">{{ openness, conscientiousness, extraversion, agreeableness, neuroticism }[field]}</span>
+                        <span className="font-semibold text-amber-700">{{ openness, conscientiousness, extraversion, agreeableness, neuroticism }[field]}</span>
                       </div>
                       <input
                         type="range"
@@ -405,7 +404,7 @@ export default function DashboardPage() {
                           if (field === "neuroticism") setNeuroticism(val);
                         }}
                         disabled={answersLocked}
-                        className="w-full accent-blue-600"
+                        className="w-full accent-amber-600"
                       />
                     </label>
                   ))}

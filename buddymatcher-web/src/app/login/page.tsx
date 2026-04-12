@@ -41,8 +41,7 @@ export default function LoginPage() {
     <div className="app-shell">
       <div className="app-wrap flex min-h-screen items-center">
         <div className="panel fade-in mx-auto w-full max-w-lg p-7 sm:p-8">
-          <div className="mb-6 flex items-center justify-between gap-3">
-            <p className="chip">{t.appName}</p>
+          <div className="mb-6 flex justify-end">
             <LanguageSelect locale={locale} onChange={setLocale} label={t.language} />
           </div>
 

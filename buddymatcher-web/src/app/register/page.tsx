@@ -93,7 +93,7 @@ export default function RegisterPage() {
 
           <p className="muted mt-5 text-sm">
             {t.login} ?{" "}
-            <Link href="/login" className="font-semibold text-blue-700 hover:text-blue-800">
+            <Link href="/login" className="font-semibold text-amber-700 hover:text-amber-800">
               {t.login}
             </Link>
           </p>

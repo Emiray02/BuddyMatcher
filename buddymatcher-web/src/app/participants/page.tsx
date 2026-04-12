@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { LanguageSelect } from "@/components/language-select";
@@ -23,6 +24,7 @@ type Participant = {
 export default function ParticipantsPage() {
   const { locale, setLocale } = useLocale("tr");
   const t = text[locale];
+  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -30,18 +32,26 @@ export default function ParticipantsPage() {
   useEffect(() => {
     void (async () => {
       const response = await fetch("/api/participants");
+      if (response.status === 401) {
+        router.replace("/login");
+        return;
+      }
+      if (!response.ok) {
+        setParticipants([]);
+        setLoading(false);
+        return;
+      }
       const data = await response.json();
       setParticipants(data.participants ?? []);
       setLoading(false);
     })();
-  }, []);
+  }, [router]);
 
   return (
     <div className="app-shell">
       <div className="app-wrap">
         <header className="panel mb-5 flex flex-wrap items-center justify-between gap-3 p-5 sm:p-6">
           <div>
-            <p className="chip mb-2">Istkon&apos;26</p>
             <h1 className="text-3xl text-slate-900">{t.participantsNav}</h1>
             <p className="muted mt-1 text-sm">Istkon&apos;26 programina katilan herkesin herkese acik profili</p>
           </div>
@@ -77,17 +87,17 @@ export default function ParticipantsPage() {
 
                 <div className="mt-4 space-y-1 text-sm">
                   {participant.profile?.instagramUrl ? (
-                    <a className="text-blue-700 hover:underline" href={participant.profile.instagramUrl} target="_blank" rel="noreferrer">
+                    <a className="text-amber-700 hover:underline" href={participant.profile.instagramUrl} target="_blank" rel="noreferrer">
                       Instagram
                     </a>
                   ) : null}
                   {participant.profile?.linkedinUrl ? (
-                    <a className="block text-blue-700 hover:underline" href={participant.profile.linkedinUrl} target="_blank" rel="noreferrer">
+                    <a className="block text-amber-700 hover:underline" href={participant.profile.linkedinUrl} target="_blank" rel="noreferrer">
                       LinkedIn
                     </a>
                   ) : null}
                   {participant.profile?.xUrl ? (
-                    <a className="block text-blue-700 hover:underline" href={participant.profile.xUrl} target="_blank" rel="noreferrer">
+                    <a className="block text-amber-700 hover:underline" href={participant.profile.xUrl} target="_blank" rel="noreferrer">
                       X / Twitter
                     </a>
                   ) : null}
