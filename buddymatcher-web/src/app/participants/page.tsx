@@ -21,6 +21,13 @@ type Participant = {
   } | null;
 };
 
+type MeResponse = {
+  user: {
+    role: "USER" | "ADMIN";
+    profile: { id: string } | null;
+  } | null;
+};
+
 export default function ParticipantsPage() {
   const { locale, setLocale } = useLocale("tr");
   const t = text[locale];
@@ -31,6 +38,23 @@ export default function ParticipantsPage() {
 
   useEffect(() => {
     void (async () => {
+      const meResponse = await fetch("/api/me");
+      if (meResponse.status === 401) {
+        router.replace("/login");
+        return;
+      }
+
+      if (!meResponse.ok) {
+        setLoading(false);
+        return;
+      }
+
+      const meData = (await meResponse.json()) as MeResponse;
+      if (meData.user?.role === "USER" && !meData.user.profile) {
+        router.replace("/onboarding");
+        return;
+      }
+
       const response = await fetch("/api/participants");
       if (response.status === 401) {
         router.replace("/login");
@@ -53,7 +77,7 @@ export default function ParticipantsPage() {
         <header className="panel mb-5 flex flex-wrap items-center justify-between gap-3 p-5 sm:p-6">
           <div>
             <h1 className="text-3xl text-slate-900">{t.participantsNav}</h1>
-            <p className="muted mt-1 text-sm">Istkon&apos;26 programına katılan herkesin herkese açık profili</p>
+            <p className="muted mt-1 text-sm">{t.participantsSubtitle}</p>
           </div>
           <div className="flex items-center gap-2">
             <LanguageSelect locale={locale} onChange={setLocale} label={t.language} />

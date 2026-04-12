@@ -36,11 +36,21 @@ export default function ForgotPasswordPage() {
       body: JSON.stringify({ identifier }),
     });
 
-    const data = (await response.json()) as ForgotPasswordResponse;
+    const data = (await response.json()) as ForgotPasswordResponse & { errorCode?: string };
     setLoading(false);
 
     if (!response.ok) {
-      setError(data.error ?? "Request failed");
+      if (data.errorCode === "SMTP_NOT_CONFIGURED") {
+        setError(t.smtpNotConfigured);
+      } else if (data.errorCode === "SMTP_AUTH_FAILED") {
+        setError(t.smtpAuthFailed);
+      } else if (data.errorCode === "SMTP_CONNECTION_FAILED") {
+        setError(t.smtpConnectionFailed);
+      } else if (data.errorCode === "VERIFICATION_SEND_FAILED") {
+        setError(t.verificationSendFailed);
+      } else {
+        setError(t.forgotPasswordFailed);
+      }
       return;
     }
 

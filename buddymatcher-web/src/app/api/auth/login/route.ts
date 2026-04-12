@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
     if (identifier === adminUsername) {
       if (payload.password !== adminPassword) {
-        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+        return NextResponse.json({ error: "Invalid credentials", errorCode: "INVALID_CREDENTIALS" }, { status: 401 });
       }
 
       user = await prisma.user.findUnique({ where: { email: adminEmail } });
@@ -48,13 +48,13 @@ export async function POST(request: Request) {
     }
 
     if (!user) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json({ error: "Invalid credentials", errorCode: "INVALID_CREDENTIALS" }, { status: 401 });
     }
 
     const isAdminUsernameLogin = identifier === adminUsername;
     const valid = isAdminUsernameLogin ? true : await bcrypt.compare(payload.password, user.passwordHash);
     if (!valid) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json({ error: "Invalid credentials", errorCode: "INVALID_CREDENTIALS" }, { status: 401 });
     }
 
     const token = await createSessionToken({
@@ -65,11 +65,19 @@ export async function POST(request: Request) {
     });
     await setSessionCookie(token);
 
-    return NextResponse.json({ ok: true, role: user.role });
+    const onboardingCompleted =
+      user.role === "ADMIN"
+        ? true
+        : Boolean(await prisma.profile.findUnique({ where: { userId: user.id }, select: { id: true } }));
+
+    return NextResponse.json({ ok: true, role: user.role, onboardingCompleted });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.issues[0]?.message ?? "Validation failed" }, { status: 400 });
+      return NextResponse.json(
+        { error: error.issues[0]?.message ?? "Validation failed", errorCode: "VALIDATION_FAILED" },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: "Login failed" }, { status: 500 });
+    return NextResponse.json({ error: "Login failed", errorCode: "LOGIN_FAILED" }, { status: 500 });
   }
 }

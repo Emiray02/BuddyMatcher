@@ -17,7 +17,11 @@ export async function POST() {
     const missingProfiles = participants.filter((p) => !p.profile).length;
     if (missingProfiles > 0) {
       return NextResponse.json(
-        { error: `${missingProfiles} kullanicinin profili eksik.` },
+        {
+          error: `${missingProfiles} kullanicinin profili eksik.`,
+          errorCode: "MISSING_PROFILES",
+          count: missingProfiles,
+        },
         { status: 400 },
       );
     }
@@ -25,7 +29,11 @@ export async function POST() {
     const missingPhotos = participants.filter((p) => !p.profile?.avatarUrl).length;
     if (missingPhotos > 0) {
       return NextResponse.json(
-        { error: `${missingPhotos} kullanicinin profil fotografi eksik.` },
+        {
+          error: `${missingPhotos} kullanicinin profil fotografi eksik.`,
+          errorCode: "MISSING_PHOTOS",
+          count: missingPhotos,
+        },
         { status: 400 },
       );
     }
@@ -59,8 +67,11 @@ export async function POST() {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Matching failed";
     if (["UNAUTHORIZED", "FORBIDDEN"].includes(message)) {
-      return NextResponse.json({ error: message }, { status: message === "UNAUTHORIZED" ? 401 : 403 });
+      return NextResponse.json(
+        { error: message, errorCode: message },
+        { status: message === "UNAUTHORIZED" ? 401 : 403 },
+      );
     }
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: message, errorCode: "MATCHING_FAILED" }, { status: 400 });
   }
 }

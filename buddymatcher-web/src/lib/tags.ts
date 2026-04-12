@@ -1,3 +1,5 @@
+import { parseSurveyPayload } from "@/lib/survey";
+
 type AnswersForTagging = {
   openness: number;
   conscientiousness: number;
@@ -6,9 +8,20 @@ type AnswersForTagging = {
   neuroticism: number;
   interests: string;
   travelAfterProgram: boolean;
+  socialScore?: number;
+  opennessScore?: number;
+  flexibilityScore?: number;
+  structureScore?: number;
+  partyScore?: number;
+  travelStyleScore?: number;
+  communicationScore?: number;
 };
 
 function parseInterests(interests: string) {
+  if (interests.trim().startsWith("{")) {
+    return [];
+  }
+
   return interests
     .split(",")
     .map((x) => x.trim().toLowerCase())
@@ -20,28 +33,40 @@ function includesAny(source: string[], keywords: string[]) {
 }
 
 export function generatePublicTagsFromAnswers(input: AnswersForTagging): string[] {
+  const survey = parseSurveyPayload(input.interests);
+  const socialScore = input.socialScore ?? survey?.scores.socialScore ?? input.extraversion;
+  const opennessScore = input.opennessScore ?? survey?.scores.opennessScore ?? input.openness;
+  const flexibilityScore = input.flexibilityScore ?? survey?.scores.flexibilityScore ?? Math.max(1, 11 - input.neuroticism);
+  const structureScore = input.structureScore ?? survey?.scores.structureScore ?? input.conscientiousness;
+  const partyScore = input.partyScore ?? survey?.scores.partyScore ?? Math.round((input.extraversion + (11 - input.agreeableness)) / 2);
+  const travelStyleScore = input.travelStyleScore ?? survey?.scores.travelStyleScore ?? (input.travelAfterProgram ? 7 : 4);
+  const communicationScore = input.communicationScore ?? survey?.scores.communicationScore ?? input.agreeableness;
+
   const interests = parseInterests(input.interests);
 
   const candidates: Array<{ tag: string; score: number }> = [
-    { tag: "Explorer", score: input.openness * 1.2 },
-    { tag: "Reliable Planner", score: input.conscientiousness * 1.25 },
-    { tag: "Social Connector", score: (input.extraversion + input.agreeableness) / 2 * 1.2 },
-    { tag: "Calm Mind", score: (11 - input.neuroticism) * 1.15 },
+    { tag: "Explorer", score: opennessScore * 1.2 },
+    { tag: "Reliable Planner", score: structureScore * 1.25 },
+    { tag: "Social Connector", score: (socialScore + communicationScore) / 2 * 1.2 },
+    { tag: "Calm Mind", score: flexibilityScore * 1.15 },
+    { tag: "Adaptive Buddy", score: ((flexibilityScore + communicationScore) / 2) * 1.1 },
+    { tag: "Party Spark", score: partyScore * 1.05 },
     {
       tag: "Culture Lover",
       score:
         (includesAny(interests, ["music", "muzik", "kunst", "art", "dance", "dans", "history", "culture", "kultur"]) ? 8 : 0) +
-        input.openness * 0.4,
+        opennessScore * 0.4,
     },
     {
       tag: "Adventure Seeker",
       score:
-        (input.travelAfterProgram ? 8 : 0) +
+        (input.travelAfterProgram ? 6 : 0) +
+        travelStyleScore * 0.6 +
         (includesAny(interests, ["travel", "seyahat", "hiking", "nature", "camp", "trip"]) ? 6 : 0),
     },
     {
       tag: "Team Player",
-      score: (input.agreeableness + input.conscientiousness) / 2,
+      score: (communicationScore + structureScore) / 2,
     },
   ];
 

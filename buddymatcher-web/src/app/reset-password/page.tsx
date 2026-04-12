@@ -11,6 +11,7 @@ import { useLocale } from "@/lib/use-locale";
 type ResetPasswordResponse = {
   ok?: boolean;
   error?: string;
+  errorCode?: string;
 };
 
 function ResetPasswordContent() {
@@ -62,7 +63,11 @@ function ResetPasswordContent() {
     setLoading(false);
 
     if (!response.ok) {
-      setError(data.error ?? "Request failed");
+      if (data.errorCode === "INVALID_CODE_OR_ACCOUNT") {
+        setError(t.invalidCodeOrAccount);
+      } else {
+        setError(t.resetPasswordFailed);
+      }
       return;
     }
 

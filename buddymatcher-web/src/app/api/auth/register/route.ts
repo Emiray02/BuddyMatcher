@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
     const existing = await prisma.user.findUnique({ where: { email: payload.email } });
     if (existing) {
-      return NextResponse.json({ error: "Email already used" }, { status: 409 });
+      return NextResponse.json({ error: "Email already used", errorCode: "EMAIL_ALREADY_USED" }, { status: 409 });
     }
 
     const passwordHash = await bcrypt.hash(payload.password, 12);
@@ -49,8 +49,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, role: user.role });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.issues[0]?.message ?? "Validation failed" }, { status: 400 });
+      return NextResponse.json(
+        { error: error.issues[0]?.message ?? "Validation failed", errorCode: "VALIDATION_FAILED" },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: "Registration failed" }, { status: 500 });
+    return NextResponse.json({ error: "Registration failed", errorCode: "REGISTRATION_FAILED" }, { status: 500 });
   }
 }

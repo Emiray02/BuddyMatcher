@@ -51,7 +51,10 @@ export async function POST(request: Request) {
     } catch (mailError) {
       if (mailError instanceof Error && mailError.message === "SMTP_NOT_CONFIGURED") {
         return NextResponse.json(
-          { error: "Mail servisi ayarli degil. SMTP ortam degiskenlerini girin." },
+          {
+            error: "Mail servisi ayarli degil. SMTP ortam degiskenlerini girin.",
+            errorCode: "SMTP_NOT_CONFIGURED",
+          },
           { status: 500 },
         );
       }
@@ -63,19 +66,28 @@ export async function POST(request: Request) {
 
       if (smtpCode === "EAUTH") {
         return NextResponse.json(
-          { error: "SMTP kimlik dogrulamasi basarisiz. SMTP_USER ve SMTP_PASS degerlerini kontrol edin." },
+          {
+            error: "SMTP kimlik dogrulamasi basarisiz. SMTP_USER ve SMTP_PASS degerlerini kontrol edin.",
+            errorCode: "SMTP_AUTH_FAILED",
+          },
           { status: 500 },
         );
       }
 
       if (smtpCode === "ECONNECTION" || smtpCode === "ETIMEDOUT" || smtpCode === "ESOCKET") {
         return NextResponse.json(
-          { error: "SMTP sunucusuna baglanilamadi. SMTP_HOST, SMTP_PORT ve SMTP_SECURE ayarlarini kontrol edin." },
+          {
+            error: "SMTP sunucusuna baglanilamadi. SMTP_HOST, SMTP_PORT ve SMTP_SECURE ayarlarini kontrol edin.",
+            errorCode: "SMTP_CONNECTION_FAILED",
+          },
           { status: 500 },
         );
       }
 
-      return NextResponse.json({ error: "Dogrulama kodu gonderilemedi" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Dogrulama kodu gonderilemedi", errorCode: "VERIFICATION_SEND_FAILED" },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
@@ -84,9 +96,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.issues[0]?.message ?? "Validation failed" }, { status: 400 });
+      return NextResponse.json(
+        { error: error.issues[0]?.message ?? "Validation failed", errorCode: "VALIDATION_FAILED" },
+        { status: 400 },
+      );
     }
 
-    return NextResponse.json({ error: "Forgot password failed" }, { status: 500 });
+    return NextResponse.json({ error: "Forgot password failed", errorCode: "FORGOT_PASSWORD_FAILED" }, { status: 500 });
   }
 }

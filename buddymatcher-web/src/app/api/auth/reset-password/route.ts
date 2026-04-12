@@ -23,7 +23,10 @@ export async function POST(request: Request) {
 
     const user = await prisma.user.findUnique({ where: { email: emailToLookup } });
     if (!user) {
-      return NextResponse.json({ error: "Invalid code or account" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid code or account", errorCode: "INVALID_CODE_OR_ACCOUNT" },
+        { status: 400 },
+      );
     }
 
     const tokenHash = createHash("sha256").update(`${user.id}:${payload.code}`).digest("hex");
@@ -39,7 +42,10 @@ export async function POST(request: Request) {
     });
 
     if (!resetToken) {
-      return NextResponse.json({ error: "Invalid code or account" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid code or account", errorCode: "INVALID_CODE_OR_ACCOUNT" },
+        { status: 400 },
+      );
     }
 
     const passwordHash = await bcrypt.hash(payload.newPassword, 12);
@@ -66,9 +72,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.issues[0]?.message ?? "Validation failed" }, { status: 400 });
+      return NextResponse.json(
+        { error: error.issues[0]?.message ?? "Validation failed", errorCode: "VALIDATION_FAILED" },
+        { status: 400 },
+      );
     }
 
-    return NextResponse.json({ error: "Reset password failed" }, { status: 500 });
+    return NextResponse.json({ error: "Reset password failed", errorCode: "RESET_PASSWORD_FAILED" }, { status: 500 });
   }
 }

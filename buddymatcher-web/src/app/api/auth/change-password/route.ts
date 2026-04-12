@@ -22,12 +22,15 @@ export async function POST(request: Request) {
 
     const user = await prisma.user.findUnique({ where: { id: session.sub } });
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: "User not found", errorCode: "USER_NOT_FOUND" }, { status: 404 });
     }
 
     const validCurrent = await bcrypt.compare(payload.currentPassword, user.passwordHash);
     if (!validCurrent) {
-      return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Current password is incorrect", errorCode: "CURRENT_PASSWORD_INCORRECT" },
+        { status: 401 },
+      );
     }
 
     const passwordHash = await bcrypt.hash(payload.newPassword, 12);
@@ -46,13 +49,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.issues[0]?.message ?? "Validation failed" }, { status: 400 });
+      const isSamePasswordIssue = error.issues.some((issue) => issue.message === "New password must be different from current password");
+      return NextResponse.json(
+        {
+          error: error.issues[0]?.message ?? "Validation failed",
+          errorCode: isSamePasswordIssue ? "NEW_PASSWORD_SAME" : "VALIDATION_FAILED",
+        },
+        { status: 400 },
+      );
     }
 
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized", errorCode: "UNAUTHORIZED" }, { status: 401 });
     }
 
-    return NextResponse.json({ error: "Change password failed" }, { status: 500 });
+    return NextResponse.json({ error: "Change password failed", errorCode: "CHANGE_PASSWORD_FAILED" }, { status: 500 });
   }
 }

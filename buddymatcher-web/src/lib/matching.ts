@@ -1,5 +1,7 @@
 import { Country, Profile, User } from "@prisma/client";
 
+import { getSurveyScoresFromLegacyProfile, parseSurveyPayload } from "@/lib/survey";
+
 type Participant = User & { profile: Profile | null };
 
 type MatchResult = {
@@ -13,63 +15,57 @@ function clampScore(value: number) {
   return Math.max(0, Math.min(100, value));
 }
 
-function normalizedBigFiveDistance(a: Profile, b: Profile) {
-  const fields: Array<keyof Pick<Profile, "openness" | "conscientiousness" | "extraversion" | "agreeableness" | "neuroticism">> = [
-    "openness",
-    "conscientiousness",
-    "extraversion",
-    "agreeableness",
-    "neuroticism",
+function compatibilityScore(a: Profile, b: Profile) {
+  const aScores = getSurveyScoresFromLegacyProfile(a);
+  const bScores = getSurveyScoresFromLegacyProfile(b);
+
+  const weightedDimensions: Array<[keyof typeof aScores, number]> = [
+    ["socialScore", 18],
+    ["opennessScore", 16],
+    ["flexibilityScore", 14],
+    ["structureScore", 10],
+    ["partyScore", 14],
+    ["travelStyleScore", 12],
+    ["communicationScore", 16],
   ];
 
-  let sumSq = 0;
-  for (const field of fields) {
-    const delta = a[field] - b[field];
-    sumSq += delta * delta;
+  let totalWeight = 0;
+  let weightedSimilarity = 0;
+  for (const [field, weight] of weightedDimensions) {
+    const diff = Math.abs(aScores[field] - bScores[field]);
+    const similarity = 1 - diff / 9;
+    weightedSimilarity += similarity * weight;
+    totalWeight += weight;
   }
 
-  const maxDistance = Math.sqrt(fields.length * 9 * 9);
-  return Math.sqrt(sumSq) / maxDistance;
-}
+  const coreScore = (weightedSimilarity / totalWeight) * 84;
+  const opennessBridgeScore = ((aScores.opennessScore + bScores.opennessScore) / 20) * 8;
+  const rhythmDiff = Math.abs(aScores.nightRhythmScore - bScores.nightRhythmScore);
+  const rhythmScore = (1 - rhythmDiff / 9) * 4;
+  const travelAlignmentScore = (a.travelAfterProgram === b.travelAfterProgram ? 1 : 0) * 4;
 
-function parseInterests(value: string) {
-  return new Set(
-    value
-      .split(",")
-      .map((x) => x.trim().toLowerCase())
-      .filter(Boolean),
-  );
-}
-
-function jaccardOverlap(a: Set<string>, b: Set<string>) {
-  if (a.size === 0 && b.size === 0) {
-    return 0.5;
-  }
-
-  let intersection = 0;
-  for (const item of a) {
-    if (b.has(item)) {
-      intersection += 1;
-    }
-  }
-  const union = a.size + b.size - intersection;
-  return union === 0 ? 0 : intersection / union;
-}
-
-function compatibilityScore(a: Profile, b: Profile) {
-  const personalityDistance = normalizedBigFiveDistance(a, b);
-  const personalityScore = (1 - personalityDistance) * 70;
-
-  const interestsScore = jaccardOverlap(parseInterests(a.interests), parseInterests(b.interests)) * 20;
-  const travelScore = (a.travelAfterProgram === b.travelAfterProgram ? 1 : 0) * 10;
-
-  return clampScore(personalityScore + interestsScore + travelScore);
+  return clampScore(coreScore + opennessBridgeScore + rhythmScore + travelAlignmentScore);
 }
 
 function buildReason(a: Profile, b: Profile, score: number) {
-  const overlap = jaccardOverlap(parseInterests(a.interests), parseInterests(b.interests));
+  const aScores = getSurveyScoresFromLegacyProfile(a);
+  const bScores = getSurveyScoresFromLegacyProfile(b);
+
+  const socialDiff = Math.abs(aScores.socialScore - bScores.socialScore);
+  const communicationDiff = Math.abs(aScores.communicationScore - bScores.communicationScore);
+  const opennessAvg = (aScores.opennessScore + bScores.opennessScore) / 2;
   const travelAligned = a.travelAfterProgram === b.travelAfterProgram;
-  return `Big Five uyumu ve ilgi alani ortusmesiyle ${score.toFixed(1)} puan. Ilgi ortusmesi: ${(overlap * 100).toFixed(0)}%. Seyahat plani uyumu: ${travelAligned ? "evet" : "hayir"}.`;
+
+  const aSurvey = parseSurveyPayload(a.interests);
+  const bSurvey = parseSurveyPayload(b.interests);
+  const activityHint =
+    aSurvey && bSurvey
+      ? aSurvey.forcedChoices.idealActivity === bSurvey.forcedChoices.idealActivity
+        ? "Ideal activity preference aligned"
+        : "Activity style offers healthy contrast"
+      : "Activity preference from legacy profile";
+
+  return `Survey-based compatibility: ${score.toFixed(1)} points. Social gap ${socialDiff.toFixed(0)}/9, communication gap ${communicationDiff.toFixed(0)}/9, openness average ${opennessAvg.toFixed(1)}/10. Travel plan alignment: ${travelAligned ? "yes" : "no"}. ${activityHint}.`;
 }
 
 function hungarian(costs: number[][]) {

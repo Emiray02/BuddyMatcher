@@ -28,14 +28,28 @@ export default function LoginPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ identifier, password }),
     });
-    const data = await response.json();
+    const data = (await response.json()) as {
+      errorCode?: string;
+      role?: "USER" | "ADMIN";
+      onboardingCompleted?: boolean;
+    };
 
     setLoading(false);
     if (!response.ok) {
-      setError(data.error ?? "Request failed");
+      const errorCode = data.errorCode as string | undefined;
+      if (errorCode === "INVALID_CREDENTIALS") {
+        setError(t.invalidCredentials);
+      } else {
+        setError(t.loginFailed);
+      }
       return;
     }
-    router.push("/dashboard");
+    if (data.role === "ADMIN") {
+      router.push("/dashboard");
+      return;
+    }
+
+    router.push(data.onboardingCompleted ? "/participants" : "/onboarding");
   }
 
   return (
@@ -46,7 +60,7 @@ export default function LoginPage() {
             <LanguageSelect locale={locale} onChange={setLocale} label={t.language} />
           </div>
 
-          <h1 className="text-3xl text-slate-900">{t.welcomeBack}</h1>
+          <h1 className="text-center text-3xl text-slate-900">{t.welcomeBack}</h1>
 
           <form className="rise-in mt-6 space-y-4" onSubmit={onSubmit}>
             <input

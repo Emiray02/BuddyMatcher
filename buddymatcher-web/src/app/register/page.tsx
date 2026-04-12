@@ -29,14 +29,22 @@ export default function RegisterPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password }),
     });
-    const data = await response.json();
+    const data = (await response.json()) as {
+      errorCode?: string;
+      role?: "USER" | "ADMIN";
+    };
 
     setLoading(false);
     if (!response.ok) {
-      setError(data.error ?? "Request failed");
+      const errorCode = data.errorCode as string | undefined;
+      if (errorCode === "EMAIL_ALREADY_USED") {
+        setError(t.emailAlreadyUsed);
+      } else {
+        setError(t.registrationFailed);
+      }
       return;
     }
-    router.push("/dashboard");
+    router.push(data.role === "ADMIN" ? "/dashboard" : "/onboarding");
   }
 
   return (
