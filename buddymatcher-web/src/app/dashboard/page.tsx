@@ -487,12 +487,10 @@ export default function DashboardPage() {
               <Link href="/participants" className="btn-ghost px-4 py-2">
                 {t.participantsNav}
               </Link>
-              <div className="flex items-center gap-2">
-                <LanguageSelect locale={locale} onChange={setLocale} label={t.language} />
-                <button className="btn-ghost px-4 py-2" onClick={logout}>
-                  {t.logout}
-                </button>
-              </div>
+              <button className="btn-ghost px-4 py-2" onClick={logout}>
+                {t.logout}
+              </button>
+              <LanguageSelect locale={locale} onChange={setLocale} label={t.language} />
             </div>
           </div>
         </header>
