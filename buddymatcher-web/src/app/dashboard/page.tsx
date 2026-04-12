@@ -605,7 +605,7 @@ export default function DashboardPage() {
                         <div className="mt-3 space-y-3">
                           {section.questionIds.map((questionId, index) => (
                             <div key={questionId} className="rounded-xl border border-slate-100 bg-slate-50/80 p-3">
-                              <p className="text-sm text-slate-700">{section.questions[index]}</p>
+                              <p className="min-h-[2.75rem] text-sm text-slate-700">{section.questions[index]}</p>
                               <div className="mt-2 grid grid-cols-5 gap-2">
                                 {likertScale.map((value) => (
                                   <label
