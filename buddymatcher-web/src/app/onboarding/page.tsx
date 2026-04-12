@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { LanguageSelect } from "@/components/language-select";
 import { text } from "@/lib/i18n";
 import {
+  LIKERT_QUESTION_IDS,
   computeSurveyScores,
   getForcedChoiceText,
   getLikertLabels,
@@ -95,7 +96,6 @@ export default function OnboardingPage() {
   }, [router]);
 
   const forcedStepIndex = surveySections.length;
-  const totalSurveySteps = surveySections.length + 1;
   const isForcedStep = surveyStep === forcedStepIndex;
   const currentSection = !isForcedStep ? surveySections[surveyStep] : null;
 
@@ -110,7 +110,23 @@ export default function OnboardingPage() {
     Boolean(forcedChoices.timeStyle) &&
     travelAfterProgram !== null;
 
-  const progressPercent = Math.round(((surveyStep + 1) / totalSurveySteps) * 100);
+  const answeredLikertCount = useMemo(
+    () => LIKERT_QUESTION_IDS.reduce((count, questionId) => count + (likertAnswers[questionId] ? 1 : 0), 0),
+    [likertAnswers],
+  );
+
+  const answeredForcedCount =
+    Number(Boolean(forcedChoices.planningStyle)) +
+    Number(Boolean(forcedChoices.buddyPriority)) +
+    Number(Boolean(forcedChoices.idealActivity)) +
+    Number(Boolean(forcedChoices.timeStyle)) +
+    Number(travelAfterProgram !== null);
+
+  const totalAnswerableCount = LIKERT_QUESTION_IDS.length + 5;
+  const progressPercent = Math.max(
+    0,
+    Math.min(100, Math.round(((answeredLikertCount + answeredForcedCount) / totalAnswerableCount) * 100)),
+  );
 
   const validatedLikertAnswers = useMemo(() => {
     try {
