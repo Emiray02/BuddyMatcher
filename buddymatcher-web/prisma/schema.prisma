@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Country {
+  TR
+  DE
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  name         String
+  role         Role        @default(USER)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  profile      Profile?
+  matchesAsA   Match[]     @relation("MatchA")
+  matchesAsB   Match[]     @relation("MatchB")
+  rounds       MatchRound[]
+}
+
+model Profile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  country             Country
+  openness            Int
+  conscientiousness   Int
+  extraversion        Int
+  agreeableness       Int
+  neuroticism         Int
+  interests           String
+  bio                 String?
+  travelAfterProgram  Boolean  @default(false)
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MatchRound {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  matches     Match[]
+}
+
+model Match {
+  id        String     @id @default(cuid())
+  roundId   String
+  personAId String
+  personBId String
+  score     Float
+  reason    String?
+  round     MatchRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  personA   User       @relation("MatchA", fields: [personAId], references: [id])
+  personB   User       @relation("MatchB", fields: [personBId], references: [id])
+
+  @@unique([roundId, personAId, personBId])
+}
