@@ -445,7 +445,7 @@ export default function DashboardPage() {
     await loadData();
   }
 
-  if (loading) {
+  if (loading && !user) {
     return (
       <div className="app-shell">
         <div className="app-wrap flex min-h-screen items-center justify-center">
