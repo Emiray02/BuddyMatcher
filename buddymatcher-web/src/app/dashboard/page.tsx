@@ -80,9 +80,9 @@ const bigFiveFields = [
 
 const bigFiveLabels = {
   tr: {
-    openness: "Aciklik",
+    openness: "Açıklık",
     conscientiousness: "Sorumluluk",
-    extraversion: "Disadonukluk",
+    extraversion: "Dışadönüklük",
     agreeableness: "Uyumluluk",
     neuroticism: "Duygusal Denge",
   },
@@ -210,6 +210,35 @@ export default function DashboardPage() {
     () => !!user?.profile && user.role !== "ADMIN" && !answersEditable,
     [answersEditable, user],
   );
+
+  function onAvatarFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setMessage(t.invalidPhotoType);
+      return;
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      setMessage(t.photoTooLarge);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setAvatarUrl(reader.result);
+        setMessage(t.photoSelected);
+      }
+    };
+    reader.onerror = () => {
+      setMessage(t.photoReadError);
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function saveProfile() {
     const response = await fetch("/api/profile", {
@@ -387,7 +416,11 @@ export default function DashboardPage() {
                   <input className="field" placeholder={t.name} value={fullName} onChange={(e) => setFullName(e.target.value)} />
                 </div>
                 <div className="md:col-span-2">
-                  <input className="field" placeholder="Photo URL (required)" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
+                  <label className="block text-sm font-semibold text-slate-700">
+                    {t.profilePhoto}
+                    <input className="field mt-2" type="file" accept="image/*" onChange={onAvatarFileChange} />
+                  </label>
+                  <p className="muted mt-2 text-xs">{t.photoHint}</p>
                 </div>
                 <div className="md:col-span-2">
                   {avatarUrl ? <img src={avatarUrl} alt={fullName || "Profile"} className="h-32 w-32 rounded-xl object-cover" /> : null}
@@ -546,7 +579,7 @@ export default function DashboardPage() {
                           </button>
                         </>
                       ) : (
-                        <p className="muted mt-2 text-xs">Profile yok</p>
+                        <p className="muted mt-2 text-xs">Profil yok</p>
                       )}
                     </div>
                   ))}

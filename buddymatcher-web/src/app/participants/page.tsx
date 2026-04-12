@@ -53,7 +53,7 @@ export default function ParticipantsPage() {
         <header className="panel mb-5 flex flex-wrap items-center justify-between gap-3 p-5 sm:p-6">
           <div>
             <h1 className="text-3xl text-slate-900">{t.participantsNav}</h1>
-            <p className="muted mt-1 text-sm">Istkon&apos;26 programina katilan herkesin herkese acik profili</p>
+            <p className="muted mt-1 text-sm">Istkon&apos;26 programına katılan herkesin herkese açık profili</p>
           </div>
           <div className="flex items-center gap-2">
             <LanguageSelect locale={locale} onChange={setLocale} label={t.language} />

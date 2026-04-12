@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { LanguageSelect } from "@/components/language-select";
@@ -10,17 +11,16 @@ import { useLocale } from "@/lib/use-locale";
 type ForgotPasswordResponse = {
   ok?: boolean;
   message?: string;
-  resetUrl?: string;
   error?: string;
 };
 
 export default function ForgotPasswordPage() {
   const { locale, setLocale } = useLocale("tr");
   const t = text[locale];
+  const router = useRouter();
 
   const [identifier, setIdentifier] = useState("");
   const [message, setMessage] = useState("");
-  const [resetUrl, setResetUrl] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +29,6 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError("");
     setMessage("");
-    setResetUrl("");
 
     const response = await fetch("/api/auth/forgot-password", {
       method: "POST",
@@ -45,10 +44,8 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    setMessage(data.message ?? t.forgotPasswordSuccess);
-    if (data.resetUrl) {
-      setResetUrl(data.resetUrl);
-    }
+    setMessage(t.forgotPasswordSuccess);
+    router.push(`/reset-password?identifier=${encodeURIComponent(identifier.trim())}`);
   }
 
   return (
@@ -74,16 +71,9 @@ export default function ForgotPasswordPage() {
 
             {error ? <p className="text-sm text-rose-600">{error}</p> : null}
             {message ? <p className="status text-sm">{message}</p> : null}
-            {resetUrl ? (
-              <p className="text-sm text-amber-700 break-all">
-                <a href={resetUrl} className="hover:underline">
-                  {resetUrl}
-                </a>
-              </p>
-            ) : null}
 
             <button disabled={loading} className="btn-primary w-full px-4 py-3 disabled:opacity-50" type="submit">
-              {loading ? "..." : t.sendResetLink}
+              {loading ? "..." : t.sendResetCode}
             </button>
           </form>
 

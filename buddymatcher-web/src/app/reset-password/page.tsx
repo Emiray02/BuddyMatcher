@@ -17,8 +17,10 @@ function ResetPasswordContent() {
   const { locale, setLocale } = useLocale("tr");
   const t = text[locale];
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") ?? "";
+  const initialIdentifier = searchParams.get("identifier") ?? "";
 
+  const [identifier, setIdentifier] = useState(initialIdentifier);
+  const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,8 +32,13 @@ function ResetPasswordContent() {
     setError("");
     setSuccess("");
 
-    if (!token) {
-      setError(t.invalidResetToken);
+    if (!identifier.trim()) {
+      setError(t.identifierRequired);
+      return;
+    }
+
+    if (!/^\d{6}$/.test(code.trim())) {
+      setError(t.invalidVerificationCode);
       return;
     }
 
@@ -44,7 +51,11 @@ function ResetPasswordContent() {
     const response = await fetch("/api/auth/reset-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, newPassword }),
+      body: JSON.stringify({
+        identifier,
+        code,
+        newPassword,
+      }),
     });
 
     const data = (await response.json()) as ResetPasswordResponse;
@@ -56,6 +67,7 @@ function ResetPasswordContent() {
     }
 
     setSuccess(t.resetPasswordSuccess);
+    setCode("");
     setNewPassword("");
     setConfirmPassword("");
   }
@@ -72,6 +84,24 @@ function ResetPasswordContent() {
           <p className="muted mt-2 text-sm">{t.resetPasswordSubtitle}</p>
 
           <form className="rise-in mt-6 space-y-4" onSubmit={onSubmit}>
+            <input
+              className="field"
+              placeholder={t.forgotPasswordIdentifier}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              type="text"
+              required
+            />
+            <input
+              className="field"
+              placeholder={t.verificationCode}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              required
+            />
             <input
               className="field"
               placeholder={t.newPassword}

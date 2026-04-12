@@ -10,6 +10,7 @@ TR-DE kultur degisim programi icin buddy eslestirme web uygulamasi.
 - Admin icin CSV ile toplu katilimci import
 - Admin icin tek tikla global optimum buddy eslestirme
 - Kullaniciya eslesme sonucu ve skor aciklamasi gosterimi
+- E-posta ile dogrulama kodu gondererek sifre sifirlama
 
 ## Teknoloji
 
@@ -56,6 +57,12 @@ Uygulama: http://localhost:3000
 - `ADMIN_USERNAME`
 - `ADMIN_PASSWORD`
 - `ADMIN_EMAIL`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SMTP_FROM`
+- `SMTP_SECURE`
 
 Giris ekraninda `ADMIN_USERNAME` + `ADMIN_PASSWORD` ile giris yapildiginda admin hesabi otomatik olusturulur veya admin olarak guncellenir.
 

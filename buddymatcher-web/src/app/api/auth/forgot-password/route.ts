@@ -1,8 +1,9 @@
-import { createHash, randomBytes } from "crypto";
+import { createHash, randomInt } from "crypto";
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { sendPasswordResetCodeMail } from "@/lib/mailer";
 import { prisma } from "@/lib/prisma";
 
 const forgotPasswordSchema = z.object({
@@ -22,12 +23,17 @@ export async function POST(request: Request) {
 
     // Return same shape even if account does not exist to avoid user enumeration.
     if (!user) {
-      return NextResponse.json({ ok: true, message: "If this account exists, a reset link has been created." });
+      return NextResponse.json({ ok: true, message: "If this account exists, a verification code has been sent." });
     }
 
-    const rawToken = randomBytes(32).toString("hex");
-    const tokenHash = createHash("sha256").update(rawToken).digest("hex");
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
+    const verificationCode = String(randomInt(100000, 1000000));
+    const tokenHash = createHash("sha256").update(`${user.id}:${verificationCode}`).digest("hex");
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 10);
+
+    await prisma.passwordResetToken.updateMany({
+      where: { userId: user.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
 
     await prisma.passwordResetToken.create({
       data: {
@@ -37,13 +43,25 @@ export async function POST(request: Request) {
       },
     });
 
-    const origin = new URL(request.url).origin;
-    const resetUrl = `${origin}/reset-password?token=${rawToken}`;
+    try {
+      await sendPasswordResetCodeMail({
+        to: user.email,
+        code: verificationCode,
+      });
+    } catch (mailError) {
+      if (mailError instanceof Error && mailError.message === "SMTP_NOT_CONFIGURED") {
+        return NextResponse.json(
+          { error: "Mail servisi ayarli degil. SMTP ortam degiskenlerini girin." },
+          { status: 500 },
+        );
+      }
+
+      return NextResponse.json({ error: "Dogrulama kodu gonderilemedi" }, { status: 500 });
+    }
 
     return NextResponse.json({
       ok: true,
-      message: "If this account exists, a reset link has been created.",
-      resetUrl,
+      message: "If this account exists, a verification code has been sent.",
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

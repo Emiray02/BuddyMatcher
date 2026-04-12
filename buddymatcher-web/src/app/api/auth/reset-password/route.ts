@@ -7,29 +7,46 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
 const resetPasswordSchema = z.object({
-  token: z.string().min(20),
+  identifier: z.string().min(2),
+  code: z.string().regex(/^\d{6}$/),
   newPassword: z.string().min(8),
 });
 
 export async function POST(request: Request) {
   try {
     const payload = resetPasswordSchema.parse(await request.json());
-    const tokenHash = createHash("sha256").update(payload.token).digest("hex");
+    const identifier = payload.identifier.trim().toLowerCase();
 
-    const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { tokenHash },
-      include: { user: true },
+    const adminUsername = (process.env.ADMIN_USERNAME ?? "admin").trim().toLowerCase();
+    const adminEmail = (process.env.ADMIN_EMAIL ?? "admin@buddymatcher.local").trim().toLowerCase();
+    const emailToLookup = identifier === adminUsername ? adminEmail : identifier;
+
+    const user = await prisma.user.findUnique({ where: { email: emailToLookup } });
+    if (!user) {
+      return NextResponse.json({ error: "Invalid code or account" }, { status: 400 });
+    }
+
+    const tokenHash = createHash("sha256").update(`${user.id}:${payload.code}`).digest("hex");
+
+    const resetToken = await prisma.passwordResetToken.findFirst({
+      where: {
+        userId: user.id,
+        tokenHash,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: "desc" },
     });
 
-    if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
-      return NextResponse.json({ error: "Invalid or expired reset token" }, { status: 400 });
+    if (!resetToken) {
+      return NextResponse.json({ error: "Invalid code or account" }, { status: 400 });
     }
 
     const passwordHash = await bcrypt.hash(payload.newPassword, 12);
 
     await prisma.$transaction([
       prisma.user.update({
-        where: { id: resetToken.userId },
+        where: { id: user.id },
         data: { passwordHash },
       }),
       prisma.passwordResetToken.update({
@@ -38,7 +55,7 @@ export async function POST(request: Request) {
       }),
       prisma.passwordResetToken.updateMany({
         where: {
-          userId: resetToken.userId,
+          userId: user.id,
           usedAt: null,
           id: { not: resetToken.id },
         },
