@@ -249,6 +249,12 @@ type SurveyUiText = {
     profileCountry: string;
     answerAllInSection: string;
     completeForcedChoices: string;
+    introTitle: string;
+    introBody: string;
+    introStepOne: string;
+    introStepTwo: string;
+    introStepThree: string;
+    introAction: string;
   };
 };
 
@@ -345,6 +351,12 @@ const SURVEY_UI_TEXT: Record<SurveyLocale, SurveyUiText> = {
       profileCountry: "Country",
       answerAllInSection: "Please answer all questions in this section.",
       completeForcedChoices: "Please complete all forced-choice fields and travel selection.",
+      introTitle: "Welcome, your Buddy journey starts now",
+      introBody: "You are on the onboarding flow. Here is what happens next:",
+      introStepOne: "Answer all matching questions.",
+      introStepTwo: "Complete your public profile with photo and bio.",
+      introStepThree: "Join Istkon'26 Participants and discover everyone.",
+      introAction: "Start now",
     },
   },
   tr: {
@@ -469,6 +481,12 @@ const SURVEY_UI_TEXT: Record<SurveyLocale, SurveyUiText> = {
       profileCountry: "Ulke",
       answerAllInSection: "Lutfen bu bolumdeki tum sorulari cevapla.",
       completeForcedChoices: "Lutfen tum zorunlu secimleri ve seyahat secimini tamamla.",
+      introTitle: "Hos geldin, Buddy yolculugun simdi basliyor",
+      introBody: "Onboarding akisindasin. Sirada bunlar var:",
+      introStepOne: "Tum eslestirme sorularini cevapla.",
+      introStepTwo: "Fotograf ve bio ile herkese acik profilini tamamla.",
+      introStepThree: "Istkon'26 Participants sayfasina katilip herkesi kesfet.",
+      introAction: "Hadi baslayalim",
     },
   },
   de: {
@@ -593,6 +611,12 @@ const SURVEY_UI_TEXT: Record<SurveyLocale, SurveyUiText> = {
       profileCountry: "Land",
       answerAllInSection: "Bitte beantworte alle Fragen in diesem Abschnitt.",
       completeForcedChoices: "Bitte alle Pflichtauswahlen und die Reiseauswahl abschliessen.",
+      introTitle: "Willkommen, deine Buddy-Reise beginnt jetzt",
+      introBody: "Du bist im Onboarding. Als Naechstes passiert:",
+      introStepOne: "Beantworte alle Matching-Fragen.",
+      introStepTwo: "Vervollstaendige dein oeffentliches Profil mit Foto und Bio.",
+      introStepThree: "Wechsle zur Istkon'26 Participants Seite und entdecke alle.",
+      introAction: "Jetzt starten",
     },
   },
 };

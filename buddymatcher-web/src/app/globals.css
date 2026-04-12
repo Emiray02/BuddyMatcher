@@ -187,6 +187,89 @@ h4 {
   padding: 0.75rem 0.9rem;
 }
 
+.onboarding-intro {
+  background: radial-gradient(circle at 20% 12%, rgba(255, 208, 95, 0.24), transparent 42%),
+    radial-gradient(circle at 82% 88%, rgba(255, 191, 62, 0.22), transparent 36%),
+    rgba(22, 16, 6, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.onboarding-intro-card {
+  position: relative;
+  border-color: rgba(205, 145, 0, 0.35);
+  animation: introPop 0.55s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+}
+
+.intro-glow {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  filter: blur(30px);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.intro-glow-a {
+  top: -110px;
+  right: -90px;
+  background: radial-gradient(circle, rgba(245, 169, 20, 0.42), rgba(245, 169, 20, 0));
+  animation: introDrift 4s ease-in-out infinite;
+}
+
+.intro-glow-b {
+  bottom: -120px;
+  left: -90px;
+  background: radial-gradient(circle, rgba(255, 208, 95, 0.38), rgba(255, 208, 95, 0));
+  animation: introDrift 4.8s ease-in-out infinite reverse;
+}
+
+.intro-badges {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.intro-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f5c12a, #ffe08a);
+  border: 1px solid rgba(184, 128, 0, 0.48);
+  color: #5f4000;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  animation: introFloat 2.2s ease-in-out infinite;
+}
+
+.intro-badge:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.intro-badge:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+.intro-step {
+  position: relative;
+  padding-left: 1.2rem;
+}
+
+.intro-step::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.5rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #f4b01e;
+  box-shadow: 0 0 0 4px rgba(244, 176, 30, 0.16);
+}
+
 .fade-in {
   animation: fadeIn 0.8s ease both;
 }
@@ -228,10 +311,48 @@ h4 {
   }
 }
 
+@keyframes introPop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes introFloat {
+  from {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes introDrift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fade-in,
   .rise-in,
-  .orb {
+  .orb,
+  .onboarding-intro-card,
+  .intro-glow,
+  .intro-badge {
     animation: none !important;
   }
 }

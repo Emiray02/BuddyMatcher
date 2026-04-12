@@ -51,6 +51,7 @@ export default function OnboardingPage() {
   const [surveyStep, setSurveyStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showIntro, setShowIntro] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -91,9 +92,22 @@ export default function OnboardingPage() {
       }
 
       setFullName(user.name);
+      setShowIntro(true);
       setLoading(false);
     })();
   }, [router]);
+
+  useEffect(() => {
+    if (!showIntro || stage !== "survey") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowIntro(false);
+    }, 3600);
+
+    return () => window.clearTimeout(timer);
+  }, [showIntro, stage]);
 
   const forcedStepIndex = surveySections.length;
   const isForcedStep = surveyStep === forcedStepIndex;
@@ -289,6 +303,38 @@ export default function OnboardingPage() {
   return (
     <div className="app-shell">
       <div className="app-wrap">
+        {stage === "survey" && showIntro ? (
+          <div className="onboarding-intro fixed inset-0 z-50 flex items-center justify-center px-4">
+            <div className="onboarding-intro-card panel fade-in w-full max-w-xl overflow-hidden p-6 sm:p-7">
+              <div className="intro-glow intro-glow-a" />
+              <div className="intro-glow intro-glow-b" />
+
+              <div className="relative">
+                <div className="intro-badges mb-4">
+                  <span className="intro-badge">01</span>
+                  <span className="intro-badge">02</span>
+                  <span className="intro-badge">03</span>
+                </div>
+
+                <h2 className="text-2xl text-slate-900 sm:text-3xl">{surveyUi.wizard.introTitle}</h2>
+                <p className="muted mt-2 text-sm sm:text-base">{surveyUi.wizard.introBody}</p>
+
+                <ul className="mt-4 space-y-2 text-sm text-slate-700 sm:text-base">
+                  <li className="intro-step">{surveyUi.wizard.introStepOne}</li>
+                  <li className="intro-step">{surveyUi.wizard.introStepTwo}</li>
+                  <li className="intro-step">{surveyUi.wizard.introStepThree}</li>
+                </ul>
+
+                <div className="mt-5 flex justify-end">
+                  <button className="btn-primary px-4 py-2" type="button" onClick={() => setShowIntro(false)}>
+                    {surveyUi.wizard.introAction}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <header className="panel mb-5 p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
