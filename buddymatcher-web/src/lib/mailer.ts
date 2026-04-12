@@ -54,8 +54,8 @@ export async function sendPasswordResetCodeMail({ to, code }: PasswordResetCodeM
   await transporter.sendMail({
     from: config.from,
     to,
-    subject: "Istkon'26 sifre sifirlama kodu",
-    text: `Sifre sifirlama kodunuz: ${code}\nKod 10 dakika boyunca gecerlidir.`,
-    html: `<p>Sifre sifirlama kodunuz: <strong>${code}</strong></p><p>Kod 10 dakika boyunca gecerlidir.</p>`,
+    subject: "Istkon'26 şifre sıfırlama kodu",
+    text: `Şifre sıfırlama kodunuz: ${code}\nKod 10 dakika boyunca geçerlidir.`,
+    html: `<p>Şifre sıfırlama kodunuz: <strong>${code}</strong></p><p>Kod 10 dakika boyunca geçerlidir.</p>`,
   });
 }

@@ -137,11 +137,11 @@ export function generateOptimalBuddyMatches(participants: Participant[]): MatchR
   const de = withProfile.filter((p) => p.profile?.country === Country.DE);
 
   if (tr.length === 0 || de.length === 0) {
-    throw new Error("Eslestirme icin hem TR hem DE katilimci gerekli.");
+    throw new Error("Eşleştirme için hem TR hem DE katılımcı gerekli.");
   }
 
   if (tr.length !== de.length) {
-    throw new Error("1-1 zorunlu eslestirme icin TR ve DE sayilari esit olmali.");
+    throw new Error("1-1 zorunlu eşleştirme için TR ve DE sayıları eşit olmalı.");
   }
 
   const costMatrix: number[][] = tr.map((trUser) =>

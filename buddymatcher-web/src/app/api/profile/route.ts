@@ -15,7 +15,7 @@ import { generatePublicTagsFromAnswers } from "@/lib/tags";
 
 const profileSchema = z.object({
   fullName: z.string().min(2).max(80),
-  avatarUrl: z.string().min(1, "Profil fotografi zorunlu"),
+  avatarUrl: z.string().min(1, "Profil fotoğrafı zorunlu"),
   instagramUrl: z.string().max(200).optional().default(""),
   linkedinUrl: z.string().max(200).optional().default(""),
   xUrl: z.string().max(200).optional().default(""),
@@ -77,7 +77,7 @@ export async function PUT(request: Request) {
     if (existing && session.role !== "ADMIN" && privateChanged && !existing.answersEditable) {
       return NextResponse.json(
         {
-          error: "Buddy matcher yanitlari kilitli. Duzenleme icin admin izni gerekli.",
+          error: "Buddy matcher yanıtları kilitli. Düzenleme için admin izni gerekli.",
           errorCode: "ANSWERS_LOCKED",
         },
         { status: 403 },

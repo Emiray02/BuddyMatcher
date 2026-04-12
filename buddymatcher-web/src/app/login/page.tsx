@@ -62,6 +62,8 @@ export default function LoginPage() {
           ? "/participants"
           : "/onboarding";
 
+    void router.prefetch(targetRoute);
+
     setPlayTransition(true);
     transitionTimeoutRef.current = window.setTimeout(() => {
       router.push(targetRoute);

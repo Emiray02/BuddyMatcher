@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       if (mailError instanceof Error && mailError.message === "SMTP_NOT_CONFIGURED") {
         return NextResponse.json(
           {
-            error: "Mail servisi ayarli degil. SMTP ortam degiskenlerini girin.",
+            error: "Mail servisi ayarlı değil. SMTP ortam değişkenlerini girin.",
             errorCode: "SMTP_NOT_CONFIGURED",
           },
           { status: 500 },
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       if (smtpCode === "EAUTH") {
         return NextResponse.json(
           {
-            error: "SMTP kimlik dogrulamasi basarisiz. SMTP_USER ve SMTP_PASS degerlerini kontrol edin.",
+            error: "SMTP kimlik doğrulaması başarısız. SMTP_USER ve SMTP_PASS değerlerini kontrol edin.",
             errorCode: "SMTP_AUTH_FAILED",
           },
           { status: 500 },
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
       if (smtpCode === "ECONNECTION" || smtpCode === "ETIMEDOUT" || smtpCode === "ESOCKET") {
         return NextResponse.json(
           {
-            error: "SMTP sunucusuna baglanilamadi. SMTP_HOST, SMTP_PORT ve SMTP_SECURE ayarlarini kontrol edin.",
+            error: "SMTP sunucusuna bağlanılamadı. SMTP_HOST, SMTP_PORT ve SMTP_SECURE ayarlarını kontrol edin.",
             errorCode: "SMTP_CONNECTION_FAILED",
           },
           { status: 500 },
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
       }
 
       return NextResponse.json(
-        { error: "Dogrulama kodu gonderilemedi", errorCode: "VERIFICATION_SEND_FAILED" },
+        { error: "Doğrulama kodu gönderilemedi", errorCode: "VERIFICATION_SEND_FAILED" },
         { status: 500 },
       );
     }

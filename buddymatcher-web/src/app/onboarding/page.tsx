@@ -51,7 +51,7 @@ export default function OnboardingPage() {
   const [surveyStep, setSurveyStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [showIntro, setShowIntro] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
 
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -92,7 +92,6 @@ export default function OnboardingPage() {
       }
 
       setFullName(user.name);
-      setShowIntro(true);
       setLoading(false);
     })();
   }, [router]);
@@ -279,6 +278,40 @@ export default function OnboardingPage() {
   }
 
   if (loading) {
+    if (showIntro) {
+      return (
+        <div className="app-shell">
+          <div className="app-wrap">
+            <div className="onboarding-intro fixed inset-0 z-50 flex items-center justify-center px-4">
+              <div className="onboarding-intro-card panel fade-in w-full max-w-xl overflow-hidden p-6 sm:p-7">
+                <div className="intro-glow intro-glow-a" />
+                <div className="intro-glow intro-glow-b" />
+
+                <div className="relative">
+                  <div className="intro-badges mb-4">
+                    <span className="intro-badge">01</span>
+                    <span className="intro-badge">02</span>
+                    <span className="intro-badge">03</span>
+                  </div>
+
+                  <h2 className="text-2xl text-slate-900 sm:text-3xl">{surveyUi.wizard.introTitle}</h2>
+                  <p className="muted mt-2 text-sm sm:text-base">{surveyUi.wizard.introBody}</p>
+
+                  <ul className="mt-4 space-y-2 text-sm text-slate-700 sm:text-base">
+                    <li className="intro-step">{surveyUi.wizard.introStepOne}</li>
+                    <li className="intro-step">{surveyUi.wizard.introStepTwo}</li>
+                    <li className="intro-step">{surveyUi.wizard.introStepThree}</li>
+                  </ul>
+
+                  <p className="muted mt-5 text-sm">{t.loading}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="app-shell">
         <div className="app-wrap flex min-h-screen items-center justify-center">

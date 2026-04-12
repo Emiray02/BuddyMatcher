@@ -18,7 +18,7 @@ export async function POST() {
     if (missingProfiles > 0) {
       return NextResponse.json(
         {
-          error: `${missingProfiles} kullanicinin profili eksik.`,
+          error: `${missingProfiles} kullanıcının profili eksik.`,
           errorCode: "MISSING_PROFILES",
           count: missingProfiles,
         },
@@ -30,7 +30,7 @@ export async function POST() {
     if (missingPhotos > 0) {
       return NextResponse.json(
         {
-          error: `${missingPhotos} kullanicinin profil fotografi eksik.`,
+          error: `${missingPhotos} kullanıcının profil fotoğrafı eksik.`,
           errorCode: "MISSING_PHOTOS",
           count: missingPhotos,
         },
