@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { LanguageSelect } from "@/components/language-select";
+import { SocialLinks } from "@/components/social-links";
 import { text } from "@/lib/i18n";
 import { useLocale } from "@/lib/use-locale";
 
@@ -28,6 +29,14 @@ type MeResponse = {
   } | null;
 };
 
+type MatchResponse = {
+  match: {
+    buddy: {
+      id: string;
+    };
+  } | null;
+};
+
 export default function ParticipantsPage() {
   const { locale, setLocale } = useLocale("tr");
   const t = text[locale];
@@ -35,6 +44,7 @@ export default function ParticipantsPage() {
 
   const [loading, setLoading] = useState(true);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [buddyUserId, setBuddyUserId] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -67,19 +77,38 @@ export default function ParticipantsPage() {
       }
       const data = await response.json();
       setParticipants(data.participants ?? []);
+
+      const matchResponse = await fetch("/api/matches/me");
+      if (matchResponse.ok) {
+        const matchData = (await matchResponse.json()) as MatchResponse;
+        setBuddyUserId(matchData.match?.buddy?.id ?? null);
+      } else {
+        setBuddyUserId(null);
+      }
+
       setLoading(false);
     })();
   }, [router]);
 
+  const orderedParticipants = useMemo(() => {
+    if (!buddyUserId) {
+      return participants;
+    }
+
+    const buddyIndex = participants.findIndex((participant) => participant.id === buddyUserId);
+    if (buddyIndex <= 0) {
+      return participants;
+    }
+
+    const next = [...participants];
+    const [buddyParticipant] = next.splice(buddyIndex, 1);
+    next.unshift(buddyParticipant);
+    return next;
+  }, [buddyUserId, participants]);
+
   return (
     <div className="app-shell">
       <div className="app-wrap">
-        <div className="mb-3">
-          <Link href="/dashboard" className="buddy-glow-link">
-            My Buddy
-          </Link>
-        </div>
-
         <header className="panel mb-5 flex flex-wrap items-center justify-between gap-3 p-5 sm:p-6">
           <div>
             <h1 className="text-3xl text-slate-900">{t.participantsNav}</h1>
@@ -97,12 +126,15 @@ export default function ParticipantsPage() {
           <div className="panel p-6 text-slate-700">{t.loading}</div>
         ) : (
           <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {participants.map((participant) => (
-              <article key={participant.id} className="panel p-5">
+            {orderedParticipants.map((participant) => (
+              <article key={participant.id} className="panel relative p-5">
+                {participant.id === buddyUserId ? (
+                  <span className="buddy-glow-link absolute left-4 top-4 text-xs">My Buddy</span>
+                ) : null}
                 <img
                   src={participant.profile?.avatarUrl || "https://ui-avatars.com/api/?name=Participant"}
                   alt={participant.name}
-                  className="h-28 w-28 rounded-2xl object-cover"
+                  className={`h-28 w-28 rounded-2xl object-cover ${participant.id === buddyUserId ? "mt-8" : ""}`}
                 />
                 <h3 className="mt-4 text-xl text-slate-900">{participant.name}</h3>
                 <p className="muted mt-2 text-sm">{participant.profile?.bio || "-"}</p>
@@ -115,23 +147,12 @@ export default function ParticipantsPage() {
                   ))}
                 </div>
 
-                <div className="mt-4 space-y-1 text-sm">
-                  {participant.profile?.instagramUrl ? (
-                    <a className="text-amber-700 hover:underline" href={participant.profile.instagramUrl} target="_blank" rel="noreferrer">
-                      Instagram
-                    </a>
-                  ) : null}
-                  {participant.profile?.linkedinUrl ? (
-                    <a className="block text-amber-700 hover:underline" href={participant.profile.linkedinUrl} target="_blank" rel="noreferrer">
-                      LinkedIn
-                    </a>
-                  ) : null}
-                  {participant.profile?.xUrl ? (
-                    <a className="block text-amber-700 hover:underline" href={participant.profile.xUrl} target="_blank" rel="noreferrer">
-                      X / Twitter
-                    </a>
-                  ) : null}
-                </div>
+                <SocialLinks
+                  className="mt-4"
+                  instagramUrl={participant.profile?.instagramUrl}
+                  linkedinUrl={participant.profile?.linkedinUrl}
+                  xUrl={participant.profile?.xUrl}
+                />
               </article>
             ))}
           </section>

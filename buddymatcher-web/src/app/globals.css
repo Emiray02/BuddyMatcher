@@ -103,6 +103,43 @@ h4 {
   text-transform: uppercase;
 }
 
+.social-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.social-link-icon {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(191, 132, 0, 0.36);
+  background: linear-gradient(135deg, #fff9e8 0%, #ffe9b5 100%);
+  color: #704c00;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(170, 120, 12, 0.14);
+  transition: transform 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
+}
+
+.social-link-icon:hover {
+  transform: translateY(-1px);
+  border-color: rgba(211, 143, 0, 0.65);
+  filter: brightness(1.04);
+}
+
+.social-link-icon:focus-visible {
+  outline: 2px solid rgba(211, 143, 0, 0.55);
+  outline-offset: 2px;
+}
+
+.social-link-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
 .hero-grid {
   display: grid;
   gap: 1rem;

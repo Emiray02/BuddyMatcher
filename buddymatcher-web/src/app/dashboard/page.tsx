@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AvatarCropper } from "@/components/avatar-cropper";
 import { LanguageSelect } from "@/components/language-select";
+import { SocialLinks } from "@/components/social-links";
 import { text } from "@/lib/i18n";
 import {
   buildSurveyStateFromLegacy,
@@ -810,6 +811,12 @@ export default function DashboardPage() {
                   <p className="muted text-sm">{matchData.buddy.email}</p>
                   <p className="muted text-sm">{matchData.buddy.country}</p>
                   <p className="text-sm text-slate-700">{matchData.buddy.bio || "-"}</p>
+                  <SocialLinks
+                    className="pt-1"
+                    instagramUrl={matchData.buddy.instagramUrl}
+                    linkedinUrl={matchData.buddy.linkedinUrl}
+                    xUrl={matchData.buddy.xUrl}
+                  />
                   <div className="flex flex-wrap gap-2">
                     {matchData.buddy.publicTags.map((tag) => <span className="chip" key={tag}>{tag}</span>)}
                   </div>

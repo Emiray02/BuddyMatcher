@@ -35,6 +35,7 @@ export async function GET() {
         score: match.score,
         reason: match.reason,
         buddy: {
+          id: buddy.id,
           name: buddy.name,
           email: buddy.email,
           avatarUrl: buddy.profile?.avatarUrl,
