@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "installCommand": "npm --prefix buddymatcher-web install",
-  "buildCommand": "npm --prefix buddymatcher-web run vercel-build",
-  "devCommand": "npm --prefix buddymatcher-web run dev"
+  "installCommand": "npm install",
+  "buildCommand": "npm run vercel-build",
+  "devCommand": "npm run dev"
 }
