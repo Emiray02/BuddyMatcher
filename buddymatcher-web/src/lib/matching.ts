@@ -15,9 +15,57 @@ function clampScore(value: number) {
   return Math.max(0, Math.min(100, value));
 }
 
+type ForcedChoicesFromSurvey = NonNullable<ReturnType<typeof parseSurveyPayload>>["forcedChoices"];
+
+const planningVectors: Record<ForcedChoicesFromSurvey["planningStyle"], [number, number]> = {
+  plan_flexible: [0.7, 0.6],
+  spontaneous_plan: [0.35, 0.9],
+  structured_planner: [0.95, 0.2],
+  flow_with_changes: [0.25, 0.95],
+};
+
+const buddyVectors: Record<ForcedChoicesFromSurvey["buddyPriority"], [number, number]> = {
+  fun_social: [0.9, 0.45],
+  calm_reliable: [0.35, 0.9],
+  curious_deep_talks: [0.55, 0.85],
+  action_oriented: [0.85, 0.7],
+};
+
+const activityVectors: Record<ForcedChoicesFromSurvey["idealActivity"], [number, number, number, number]> = {
+  party_social: [0.95, 0.2, 0.3, 0.4],
+  cultural_museum: [0.25, 0.95, 0.3, 0.45],
+  mixed: [0.65, 0.65, 0.55, 0.55],
+  outdoor_nature: [0.45, 0.35, 0.95, 0.5],
+  food_coffee_walk: [0.55, 0.6, 0.45, 0.95],
+};
+
+const timeStyleScale: Record<ForcedChoicesFromSurvey["timeStyle"], number> = {
+  early_bird: 1,
+  late_morning_start: 2,
+  balanced_mix: 2.5,
+  night_owl: 4,
+};
+
+function vectorSimilarity(a: number[], b: number[]) {
+  const avgDiff = a.reduce((sum, value, index) => sum + Math.abs(value - b[index]), 0) / a.length;
+  return Math.max(0, Math.min(1, 1 - avgDiff));
+}
+
+function forcedChoiceSimilarity(a: ForcedChoicesFromSurvey, b: ForcedChoicesFromSurvey) {
+  const planning = vectorSimilarity(planningVectors[a.planningStyle], planningVectors[b.planningStyle]);
+  const buddy = vectorSimilarity(buddyVectors[a.buddyPriority], buddyVectors[b.buddyPriority]);
+  const activity = vectorSimilarity(activityVectors[a.idealActivity], activityVectors[b.idealActivity]);
+  const timeDiff = Math.abs(timeStyleScale[a.timeStyle] - timeStyleScale[b.timeStyle]);
+  const time = Math.max(0, 1 - timeDiff / 3);
+
+  return planning * 0.28 + buddy * 0.28 + activity * 0.26 + time * 0.18;
+}
+
 function compatibilityScore(a: Profile, b: Profile) {
   const aScores = getSurveyScoresFromLegacyProfile(a);
   const bScores = getSurveyScoresFromLegacyProfile(b);
+  const aSurvey = parseSurveyPayload(a.interests);
+  const bSurvey = parseSurveyPayload(b.interests);
 
   const weightedDimensions: Array<[keyof typeof aScores, number]> = [
     ["socialScore", 18],
@@ -38,13 +86,17 @@ function compatibilityScore(a: Profile, b: Profile) {
     totalWeight += weight;
   }
 
-  const coreScore = (weightedSimilarity / totalWeight) * 84;
+  const coreScore = (weightedSimilarity / totalWeight) * 76;
   const opennessBridgeScore = ((aScores.opennessScore + bScores.opennessScore) / 20) * 8;
   const rhythmDiff = Math.abs(aScores.nightRhythmScore - bScores.nightRhythmScore);
   const rhythmScore = (1 - rhythmDiff / 9) * 4;
   const travelAlignmentScore = (a.travelAfterProgram === b.travelAfterProgram ? 1 : 0) * 4;
+  const forcedChoiceScore =
+    aSurvey && bSurvey
+      ? forcedChoiceSimilarity(aSurvey.forcedChoices, bSurvey.forcedChoices) * 8
+      : 4.4;
 
-  return clampScore(coreScore + opennessBridgeScore + rhythmScore + travelAlignmentScore);
+  return clampScore(coreScore + opennessBridgeScore + rhythmScore + travelAlignmentScore + forcedChoiceScore);
 }
 
 function buildReason(a: Profile, b: Profile, score: number) {
@@ -58,6 +110,10 @@ function buildReason(a: Profile, b: Profile, score: number) {
 
   const aSurvey = parseSurveyPayload(a.interests);
   const bSurvey = parseSurveyPayload(b.interests);
+  const forcedChoiceAlignment =
+    aSurvey && bSurvey
+      ? (forcedChoiceSimilarity(aSurvey.forcedChoices, bSurvey.forcedChoices) * 100).toFixed(0)
+      : "55";
   const activityHint =
     aSurvey && bSurvey
       ? aSurvey.forcedChoices.idealActivity === bSurvey.forcedChoices.idealActivity
@@ -65,7 +121,7 @@ function buildReason(a: Profile, b: Profile, score: number) {
         : "Activity style offers healthy contrast"
       : "Activity preference from legacy profile";
 
-  return `Survey-based compatibility: ${score.toFixed(1)} points. Social gap ${socialDiff.toFixed(0)}/9, communication gap ${communicationDiff.toFixed(0)}/9, openness average ${opennessAvg.toFixed(1)}/10. Travel plan alignment: ${travelAligned ? "yes" : "no"}. ${activityHint}.`;
+  return `Survey-based compatibility: ${score.toFixed(1)} points. Social gap ${socialDiff.toFixed(0)}/9, communication gap ${communicationDiff.toFixed(0)}/9, openness average ${opennessAvg.toFixed(1)}/10. Travel plan alignment: ${travelAligned ? "yes" : "no"}. Forced-choice alignment: ${forcedChoiceAlignment}%. ${activityHint}.`;
 }
 
 function hungarian(costs: number[][]) {

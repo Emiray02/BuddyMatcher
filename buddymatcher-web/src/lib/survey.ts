@@ -25,10 +25,39 @@ const LIKERT_ID_SET = new Set<string>(LIKERT_QUESTION_IDS);
 export type LikertQuestionId = (typeof LIKERT_QUESTION_IDS)[number];
 export type LikertAnswers = Record<LikertQuestionId, LikertValue>;
 
-export type PlanningStyle = "plan_flexible" | "spontaneous_plan";
-export type BuddyPriority = "fun_social" | "calm_reliable";
-export type IdealActivity = "party_social" | "cultural_museum" | "mixed";
-export type TimeStyle = "early_bird" | "night_owl";
+export const PLANNING_STYLE_VALUES = [
+  "plan_flexible",
+  "spontaneous_plan",
+  "structured_planner",
+  "flow_with_changes",
+] as const;
+
+export const BUDDY_PRIORITY_VALUES = [
+  "fun_social",
+  "calm_reliable",
+  "curious_deep_talks",
+  "action_oriented",
+] as const;
+
+export const IDEAL_ACTIVITY_VALUES = [
+  "party_social",
+  "cultural_museum",
+  "mixed",
+  "outdoor_nature",
+  "food_coffee_walk",
+] as const;
+
+export const TIME_STYLE_VALUES = [
+  "early_bird",
+  "night_owl",
+  "balanced_mix",
+  "late_morning_start",
+] as const;
+
+export type PlanningStyle = (typeof PLANNING_STYLE_VALUES)[number];
+export type BuddyPriority = (typeof BUDDY_PRIORITY_VALUES)[number];
+export type IdealActivity = (typeof IDEAL_ACTIVITY_VALUES)[number];
+export type TimeStyle = (typeof TIME_STYLE_VALUES)[number];
 
 export type ForcedChoices = {
   planningStyle: PlanningStyle;
@@ -170,6 +199,8 @@ export const FORCED_CHOICE_TEXT = {
     options: {
       plan_flexible: "I plan ahead but can be flexible",
       spontaneous_plan: "I am spontaneous but can plan when needed",
+      structured_planner: "I prefer clear structure and detailed plans",
+      flow_with_changes: "I go with the flow and adapt on the move",
     },
   },
   buddyPriority: {
@@ -177,6 +208,8 @@ export const FORCED_CHOICE_TEXT = {
     options: {
       fun_social: "Fun and social",
       calm_reliable: "Calm and reliable",
+      curious_deep_talks: "Curious and open to deep conversations",
+      action_oriented: "Action-oriented and motivated",
     },
   },
   idealActivity: {
@@ -185,6 +218,8 @@ export const FORCED_CHOICE_TEXT = {
       party_social: "Party / Social",
       cultural_museum: "Cultural / Museum",
       mixed: "Mixed",
+      outdoor_nature: "Outdoor / Nature",
+      food_coffee_walk: "Food / Coffee / City walk",
     },
   },
   timeStyle: {
@@ -192,6 +227,8 @@ export const FORCED_CHOICE_TEXT = {
     options: {
       early_bird: "Early sleeper / early riser",
       night_owl: "Late sleeper / night active",
+      balanced_mix: "Balanced day-night rhythm",
+      late_morning_start: "Late morning starter",
     },
   },
 } as const;
@@ -430,6 +467,8 @@ const SURVEY_UI_TEXT: Record<SurveyLocale, SurveyUiText> = {
         options: {
           plan_flexible: "Önceden plan yaparım ama esnek kalabilirim",
           spontaneous_plan: "Spontaneyim ama gerektiğinde plan yaparım",
+          structured_planner: "Net bir düzen ve detaylı plan severim",
+          flow_with_changes: "Akışta kalır, yolda adapte olurum",
         },
       },
       buddyPriority: {
@@ -437,6 +476,8 @@ const SURVEY_UI_TEXT: Record<SurveyLocale, SurveyUiText> = {
         options: {
           fun_social: "Eğlenceli ve sosyal",
           calm_reliable: "Sakin ve güvenilir",
+          curious_deep_talks: "Meraklı ve derin sohbetlere açık",
+          action_oriented: "Aksiyon odaklı ve motive",
         },
       },
       idealActivity: {
@@ -445,6 +486,8 @@ const SURVEY_UI_TEXT: Record<SurveyLocale, SurveyUiText> = {
           party_social: "Parti / Sosyal",
           cultural_museum: "Kültürel / Müze",
           mixed: "Karışık",
+          outdoor_nature: "Açık hava / Doğa",
+          food_coffee_walk: "Yeme-içme / Kahve / Şehir yürüyüşü",
         },
       },
       timeStyle: {
@@ -452,6 +495,8 @@ const SURVEY_UI_TEXT: Record<SurveyLocale, SurveyUiText> = {
         options: {
           early_bird: "Erken uyur / erken kalkar",
           night_owl: "Geç uyur / gece aktif",
+          balanced_mix: "Dengeli gün-gece ritmi",
+          late_morning_start: "Geç sabah başlayan ritim",
         },
       },
     },
@@ -560,6 +605,8 @@ const SURVEY_UI_TEXT: Record<SurveyLocale, SurveyUiText> = {
         options: {
           plan_flexible: "Ich plane voraus, kann aber flexibel sein",
           spontaneous_plan: "Ich bin spontan, kann aber bei Bedarf planen",
+          structured_planner: "Ich mag klare Struktur und detaillierte Planung",
+          flow_with_changes: "Ich gehe mit dem Flow und passe mich unterwegs an",
         },
       },
       buddyPriority: {
@@ -567,6 +614,8 @@ const SURVEY_UI_TEXT: Record<SurveyLocale, SurveyUiText> = {
         options: {
           fun_social: "Spassig und sozial",
           calm_reliable: "Ruhig und zuverlaessig",
+          curious_deep_talks: "Neugierig und offen fuer tiefe Gespraeche",
+          action_oriented: "Aktionsorientiert und motiviert",
         },
       },
       idealActivity: {
@@ -575,6 +624,8 @@ const SURVEY_UI_TEXT: Record<SurveyLocale, SurveyUiText> = {
           party_social: "Party / Sozial",
           cultural_museum: "Kultur / Museum",
           mixed: "Gemischt",
+          outdoor_nature: "Outdoor / Natur",
+          food_coffee_walk: "Essen / Kaffee / Stadtspaziergang",
         },
       },
       timeStyle: {
@@ -582,6 +633,8 @@ const SURVEY_UI_TEXT: Record<SurveyLocale, SurveyUiText> = {
         options: {
           early_bird: "Frueh schlafen / frueh aufstehen",
           night_owl: "Spaet schlafen / nachts aktiv",
+          balanced_mix: "Ausgewogener Tag-Nacht-Rhythmus",
+          late_morning_start: "Spaeter Morgenstart",
         },
       },
     },
@@ -726,10 +779,10 @@ export function parseForcedChoices(raw: unknown): ForcedChoices {
   }
 
   return {
-    planningStyle: parseOption(raw.planningStyle, ["plan_flexible", "spontaneous_plan"], "planningStyle"),
-    buddyPriority: parseOption(raw.buddyPriority, ["fun_social", "calm_reliable"], "buddyPriority"),
-    idealActivity: parseOption(raw.idealActivity, ["party_social", "cultural_museum", "mixed"], "idealActivity"),
-    timeStyle: parseOption(raw.timeStyle, ["early_bird", "night_owl"], "timeStyle"),
+    planningStyle: parseOption(raw.planningStyle, PLANNING_STYLE_VALUES, "planningStyle"),
+    buddyPriority: parseOption(raw.buddyPriority, BUDDY_PRIORITY_VALUES, "buddyPriority"),
+    idealActivity: parseOption(raw.idealActivity, IDEAL_ACTIVITY_VALUES, "idealActivity"),
+    timeStyle: parseOption(raw.timeStyle, TIME_STYLE_VALUES, "timeStyle"),
   };
 }
 

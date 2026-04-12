@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { AvatarCropper } from "@/components/avatar-cropper";
 import { LanguageSelect } from "@/components/language-select";
 import { text } from "@/lib/i18n";
 import {
@@ -45,6 +46,22 @@ export default function OnboardingPage() {
   const forcedChoiceText = useMemo(() => getForcedChoiceText(locale), [locale]);
   const likertLabels = useMemo(() => getLikertLabels(locale), [locale]);
   const surveyUi = useMemo(() => getSurveyUiText(locale), [locale]);
+  const planningStyleOptions = useMemo(
+    () => Object.entries(forcedChoiceText.planningStyle.options) as Array<[ForcedChoices["planningStyle"], string]>,
+    [forcedChoiceText],
+  );
+  const buddyPriorityOptions = useMemo(
+    () => Object.entries(forcedChoiceText.buddyPriority.options) as Array<[ForcedChoices["buddyPriority"], string]>,
+    [forcedChoiceText],
+  );
+  const idealActivityOptions = useMemo(
+    () => Object.entries(forcedChoiceText.idealActivity.options) as Array<[ForcedChoices["idealActivity"], string]>,
+    [forcedChoiceText],
+  );
+  const timeStyleOptions = useMemo(
+    () => Object.entries(forcedChoiceText.timeStyle.options) as Array<[ForcedChoices["timeStyle"], string]>,
+    [forcedChoiceText],
+  );
 
   const [loading, setLoading] = useState(true);
   const [stage, setStage] = useState<"survey" | "profile">("survey");
@@ -60,6 +77,8 @@ export default function OnboardingPage() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [xUrl, setXUrl] = useState("");
   const [country, setCountry] = useState<"TR" | "DE">("TR");
+  const [avatarCropSource, setAvatarCropSource] = useState<string | null>(null);
+  const [avatarCropOpen, setAvatarCropOpen] = useState(false);
 
   const [likertAnswers, setLikertAnswers] = useState<PendingLikertAnswers>({});
   const [forcedChoices, setForcedChoices] = useState<PendingForcedChoices>({});
@@ -214,13 +233,28 @@ export default function OnboardingPage() {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        setAvatarUrl(reader.result);
+        setAvatarCropSource(reader.result);
+        setAvatarCropOpen(true);
+        setError("");
       }
     };
     reader.onerror = () => {
       setError(t.photoReadError);
     };
     reader.readAsDataURL(file);
+    event.currentTarget.value = "";
+  }
+
+  function closeAvatarCropper() {
+    setAvatarCropOpen(false);
+    setAvatarCropSource(null);
+  }
+
+  function applyAvatarCrop(croppedImageDataUrl: string) {
+    setAvatarUrl(croppedImageDataUrl);
+    setAvatarCropOpen(false);
+    setAvatarCropSource(null);
+    setError("");
   }
 
   async function completeOnboarding() {
@@ -384,124 +418,81 @@ export default function OnboardingPage() {
 
                 <div>
                   <p className="text-sm font-medium text-slate-700">{forcedChoiceText.planningStyle.title}</p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <button
-                      type="button"
-                      className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                        forcedChoices.planningStyle === "plan_flexible"
-                          ? "border-amber-500 bg-amber-100 text-amber-800"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                      }`}
-                      onClick={() => updateForcedChoice("planningStyle", "plan_flexible")}
-                    >
-                      {forcedChoiceText.planningStyle.options.plan_flexible}
-                    </button>
-                    <button
-                      type="button"
-                      className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                        forcedChoices.planningStyle === "spontaneous_plan"
-                          ? "border-amber-500 bg-amber-100 text-amber-800"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                      }`}
-                      onClick={() => updateForcedChoice("planningStyle", "spontaneous_plan")}
-                    >
-                      {forcedChoiceText.planningStyle.options.spontaneous_plan}
-                    </button>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    {planningStyleOptions.map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                          forcedChoices.planningStyle === value
+                            ? "border-amber-500 bg-amber-100 text-amber-800"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
+                        }`}
+                        onClick={() => updateForcedChoice("planningStyle", value)}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
                 <div>
                   <p className="text-sm font-medium text-slate-700">{forcedChoiceText.buddyPriority.title}</p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <button
-                      type="button"
-                      className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                        forcedChoices.buddyPriority === "fun_social"
-                          ? "border-amber-500 bg-amber-100 text-amber-800"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                      }`}
-                      onClick={() => updateForcedChoice("buddyPriority", "fun_social")}
-                    >
-                      {forcedChoiceText.buddyPriority.options.fun_social}
-                    </button>
-                    <button
-                      type="button"
-                      className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                        forcedChoices.buddyPriority === "calm_reliable"
-                          ? "border-amber-500 bg-amber-100 text-amber-800"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                      }`}
-                      onClick={() => updateForcedChoice("buddyPriority", "calm_reliable")}
-                    >
-                      {forcedChoiceText.buddyPriority.options.calm_reliable}
-                    </button>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    {buddyPriorityOptions.map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                          forcedChoices.buddyPriority === value
+                            ? "border-amber-500 bg-amber-100 text-amber-800"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
+                        }`}
+                        onClick={() => updateForcedChoice("buddyPriority", value)}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
                 <div>
                   <p className="text-sm font-medium text-slate-700">{forcedChoiceText.idealActivity.title}</p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                    <button
-                      type="button"
-                      className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                        forcedChoices.idealActivity === "party_social"
-                          ? "border-amber-500 bg-amber-100 text-amber-800"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                      }`}
-                      onClick={() => updateForcedChoice("idealActivity", "party_social")}
-                    >
-                      {forcedChoiceText.idealActivity.options.party_social}
-                    </button>
-                    <button
-                      type="button"
-                      className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                        forcedChoices.idealActivity === "cultural_museum"
-                          ? "border-amber-500 bg-amber-100 text-amber-800"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                      }`}
-                      onClick={() => updateForcedChoice("idealActivity", "cultural_museum")}
-                    >
-                      {forcedChoiceText.idealActivity.options.cultural_museum}
-                    </button>
-                    <button
-                      type="button"
-                      className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                        forcedChoices.idealActivity === "mixed"
-                          ? "border-amber-500 bg-amber-100 text-amber-800"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                      }`}
-                      onClick={() => updateForcedChoice("idealActivity", "mixed")}
-                    >
-                      {forcedChoiceText.idealActivity.options.mixed}
-                    </button>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {idealActivityOptions.map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                          forcedChoices.idealActivity === value
+                            ? "border-amber-500 bg-amber-100 text-amber-800"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
+                        }`}
+                        onClick={() => updateForcedChoice("idealActivity", value)}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
                 <div>
                   <p className="text-sm font-medium text-slate-700">{forcedChoiceText.timeStyle.title}</p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <button
-                      type="button"
-                      className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                        forcedChoices.timeStyle === "early_bird"
-                          ? "border-amber-500 bg-amber-100 text-amber-800"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                      }`}
-                      onClick={() => updateForcedChoice("timeStyle", "early_bird")}
-                    >
-                      {forcedChoiceText.timeStyle.options.early_bird}
-                    </button>
-                    <button
-                      type="button"
-                      className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                        forcedChoices.timeStyle === "night_owl"
-                          ? "border-amber-500 bg-amber-100 text-amber-800"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                      }`}
-                      onClick={() => updateForcedChoice("timeStyle", "night_owl")}
-                    >
-                      {forcedChoiceText.timeStyle.options.night_owl}
-                    </button>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    {timeStyleOptions.map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                          forcedChoices.timeStyle === value
+                            ? "border-amber-500 bg-amber-100 text-amber-800"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
+                        }`}
+                        onClick={() => updateForcedChoice("timeStyle", value)}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -605,6 +596,8 @@ export default function OnboardingPage() {
               </div>
             </div>
 
+            <p className="muted mt-5 text-sm">{t.publicProfileEnglishNotice}</p>
+
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
                 <input className="field" placeholder={t.name} value={fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -624,6 +617,7 @@ export default function OnboardingPage() {
 
               <div className="md:col-span-2">
                 <textarea className="field-textarea" placeholder={t.bio} value={bio} onChange={(e) => setBio(e.target.value)} rows={3} />
+                <p className="muted mt-2 text-xs italic">{t.bioExampleHint}</p>
               </div>
 
               <div>
@@ -654,6 +648,21 @@ export default function OnboardingPage() {
             </div>
           </section>
         )}
+
+        <AvatarCropper
+          open={avatarCropOpen}
+          image={avatarCropSource}
+          onCancel={closeAvatarCropper}
+          onApply={applyAvatarCrop}
+          text={{
+            title: t.cropPhotoTitle,
+            subtitle: t.cropPhotoSubtitle,
+            zoomLabel: t.cropZoom,
+            cancelLabel: t.cropCancel,
+            applyLabel: t.cropApply,
+            failedLabel: t.cropFailed,
+          }}
+        />
 
         {error ? <p className="status mt-4 text-sm">{error}</p> : null}
       </div>

@@ -5,11 +5,15 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
+  BUDDY_PRIORITY_VALUES,
   computeSurveyScores,
+  IDEAL_ACTIVITY_VALUES,
   mapScoresToLegacyProfile,
+  PLANNING_STYLE_VALUES,
   parseForcedChoices,
   parseLikertAnswers,
   serializeSurveyPayload,
+  TIME_STYLE_VALUES,
 } from "@/lib/survey";
 import { generatePublicTagsFromAnswers } from "@/lib/tags";
 
@@ -23,10 +27,10 @@ const profileSchema = z.object({
   country: z.enum([Country.TR, Country.DE]),
   surveyLikertAnswers: z.record(z.string(), z.number().int().min(1).max(5)),
   surveyForcedChoices: z.object({
-    planningStyle: z.enum(["plan_flexible", "spontaneous_plan"]),
-    buddyPriority: z.enum(["fun_social", "calm_reliable"]),
-    idealActivity: z.enum(["party_social", "cultural_museum", "mixed"]),
-    timeStyle: z.enum(["early_bird", "night_owl"]),
+    planningStyle: z.enum(PLANNING_STYLE_VALUES),
+    buddyPriority: z.enum(BUDDY_PRIORITY_VALUES),
+    idealActivity: z.enum(IDEAL_ACTIVITY_VALUES),
+    timeStyle: z.enum(TIME_STYLE_VALUES),
   }),
   travelAfterProgram: z.boolean().default(false),
 });

@@ -74,6 +74,12 @@ export default function ParticipantsPage() {
   return (
     <div className="app-shell">
       <div className="app-wrap">
+        <div className="mb-3">
+          <Link href="/dashboard" className="buddy-glow-link">
+            My Buddy
+          </Link>
+        </div>
+
         <header className="panel mb-5 flex flex-wrap items-center justify-between gap-3 p-5 sm:p-6">
           <div>
             <h1 className="text-3xl text-slate-900">{t.participantsNav}</h1>

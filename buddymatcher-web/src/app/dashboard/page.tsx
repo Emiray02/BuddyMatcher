@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { AvatarCropper } from "@/components/avatar-cropper";
 import { LanguageSelect } from "@/components/language-select";
 import { text } from "@/lib/i18n";
 import {
@@ -113,6 +114,9 @@ export default function DashboardPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [avatarCropSource, setAvatarCropSource] = useState<string | null>(null);
+  const [avatarCropOpen, setAvatarCropOpen] = useState(false);
+  const [showPrivateAnswersModal, setShowPrivateAnswersModal] = useState(false);
 
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
@@ -199,6 +203,23 @@ export default function DashboardPage() {
     void loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    if (!showPrivateAnswersModal) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowPrivateAnswersModal(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showPrivateAnswersModal]);
+
   const surveyScores = useMemo(
     () => computeSurveyScores({ likertAnswers, travelAfterProgram }),
     [likertAnswers, travelAfterProgram],
@@ -207,6 +228,22 @@ export default function DashboardPage() {
   const forcedChoiceText = useMemo(() => getForcedChoiceText(locale), [locale]);
   const likertLabels = useMemo(() => getLikertLabels(locale), [locale]);
   const surveyUi = useMemo(() => getSurveyUiText(locale), [locale]);
+  const planningStyleOptions = useMemo(
+    () => Object.entries(forcedChoiceText.planningStyle.options) as Array<[ForcedChoices["planningStyle"], string]>,
+    [forcedChoiceText],
+  );
+  const buddyPriorityOptions = useMemo(
+    () => Object.entries(forcedChoiceText.buddyPriority.options) as Array<[ForcedChoices["buddyPriority"], string]>,
+    [forcedChoiceText],
+  );
+  const idealActivityOptions = useMemo(
+    () => Object.entries(forcedChoiceText.idealActivity.options) as Array<[ForcedChoices["idealActivity"], string]>,
+    [forcedChoiceText],
+  );
+  const timeStyleOptions = useMemo(
+    () => Object.entries(forcedChoiceText.timeStyle.options) as Array<[ForcedChoices["timeStyle"], string]>,
+    [forcedChoiceText],
+  );
 
   const answersLocked = useMemo(
     () => !!user?.profile && user.role !== "ADMIN" && !answersEditable,
@@ -246,14 +283,28 @@ export default function DashboardPage() {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        setAvatarUrl(reader.result);
-        setMessage(t.photoSelected);
+        setAvatarCropSource(reader.result);
+        setAvatarCropOpen(true);
+        setMessage("");
       }
     };
     reader.onerror = () => {
       setMessage(t.photoReadError);
     };
     reader.readAsDataURL(file);
+    event.currentTarget.value = "";
+  }
+
+  function closeAvatarCropper() {
+    setAvatarCropOpen(false);
+    setAvatarCropSource(null);
+  }
+
+  function applyAvatarCrop(croppedImageDataUrl: string) {
+    setAvatarUrl(croppedImageDataUrl);
+    setAvatarCropOpen(false);
+    setAvatarCropSource(null);
+    setMessage(t.photoSelected);
   }
 
   async function saveProfile() {
@@ -448,6 +499,7 @@ export default function DashboardPage() {
           <section className="flex flex-col gap-5">
             <article className="panel p-5 sm:p-6">
               <h2 className="text-2xl text-slate-900">{t.publicProfileSection}</h2>
+              <p className="muted mt-1 text-sm">{t.publicProfileEnglishNotice}</p>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
                   <input className="field" placeholder={t.name} value={fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -464,6 +516,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="md:col-span-2">
                   <textarea className="field-textarea" placeholder={t.bio} value={bio} onChange={(e) => setBio(e.target.value)} rows={3} />
+                  <p className="muted mt-2 text-xs italic">{t.bioExampleHint}</p>
                 </div>
                 <div className="md:col-span-2">
                   <p className="mb-2 text-sm font-semibold text-slate-700">{t.socialLinks}</p>
@@ -483,252 +536,236 @@ export default function DashboardPage() {
             </article>
 
             <article className="panel p-5 sm:p-6">
-              <h2 className="text-2xl text-slate-900">{t.privateAnswersSection}</h2>
-              <div className="mt-4 space-y-6">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <select className="field-select" value={country} onChange={(e) => setCountry(e.target.value as "TR" | "DE")} disabled={answersLocked}>
-                    <option value="TR">TR</option>
-                    <option value="DE">DE</option>
-                  </select>
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">{surveyUi.likertTitle}</p>
-                    <p className="mt-1 text-sm text-slate-700">{surveyUi.likertLegend}</p>
-                  </div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-2xl text-slate-900">{t.privateAnswersSection}</h2>
+                  <p className="muted mt-1 text-sm">{answersLocked ? t.answerLockNotice : t.answerOpenNotice}</p>
                 </div>
+                <button
+                  className="btn-primary px-4 py-2"
+                  type="button"
+                  onClick={() => setShowPrivateAnswersModal(true)}
+                >
+                  {t.openPrivateAnswersModal}
+                </button>
+              </div>
+            </article>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <div className="rounded-xl border border-slate-200 bg-white p-3">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">{surveyUi.scoreLabels.social}</p>
-                    <p className="text-2xl font-semibold text-slate-900">{surveyScores.socialScore}</p>
+            {showPrivateAnswersModal ? (
+              <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/55 px-4 py-5 backdrop-blur-sm">
+                <div className="panel w-full max-w-5xl max-h-[90vh] overflow-hidden p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-2xl text-slate-900">{t.privateAnswersSection}</h2>
+                      <p className="muted mt-1 text-sm">{answersLocked ? t.answerLockNotice : t.answerOpenNotice}</p>
+                    </div>
+                    <button
+                      className="btn-ghost px-4 py-2"
+                      type="button"
+                      onClick={() => setShowPrivateAnswersModal(false)}
+                    >
+                      {t.closePrivateAnswersModal}
+                    </button>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white p-3">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">{surveyUi.scoreLabels.openness}</p>
-                    <p className="text-2xl font-semibold text-slate-900">{surveyScores.opennessScore}</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white p-3">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">{surveyUi.scoreLabels.flexStructure}</p>
-                    <p className="text-2xl font-semibold text-slate-900">{surveyScores.flexibilityScore} / {surveyScores.structureScore}</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white p-3">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">{surveyUi.scoreLabels.partyCommunication}</p>
-                    <p className="text-2xl font-semibold text-slate-900">{surveyScores.partyScore} / {surveyScores.communicationScore}</p>
-                  </div>
-                </div>
 
-                {surveySections.map((section) => (
-                  <section key={section.id} className="rounded-2xl border border-slate-200 bg-white/90 p-4">
-                    <h3 className="text-lg font-semibold text-slate-900">{section.title}</h3>
-                    <div className="mt-3 space-y-3">
-                      {section.questionIds.map((questionId, index) => (
-                        <div key={questionId} className="rounded-xl border border-slate-100 bg-slate-50/80 p-3">
-                          <p className="text-sm text-slate-700">{section.questions[index]}</p>
-                          <div className="mt-2 grid grid-cols-5 gap-2">
-                            {likertScale.map((value) => (
-                              <label
-                                key={`${questionId}-${value}`}
-                                className={`cursor-pointer rounded-lg border px-2 py-2 text-center text-xs transition ${
-                                  likertAnswers[questionId] === value
+                  <div className="mt-4 max-h-[calc(90vh-9rem)] space-y-6 overflow-y-auto pr-1">
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <select className="field-select" value={country} onChange={(e) => setCountry(e.target.value as "TR" | "DE")} disabled={answersLocked}>
+                        <option value="TR">TR</option>
+                        <option value="DE">DE</option>
+                      </select>
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">{surveyUi.likertTitle}</p>
+                        <p className="mt-1 text-sm text-slate-700">{surveyUi.likertLegend}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      <div className="rounded-xl border border-slate-200 bg-white p-3">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">{surveyUi.scoreLabels.social}</p>
+                        <p className="text-2xl font-semibold text-slate-900">{surveyScores.socialScore}</p>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-white p-3">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">{surveyUi.scoreLabels.openness}</p>
+                        <p className="text-2xl font-semibold text-slate-900">{surveyScores.opennessScore}</p>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-white p-3">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">{surveyUi.scoreLabels.flexStructure}</p>
+                        <p className="text-2xl font-semibold text-slate-900">{surveyScores.flexibilityScore} / {surveyScores.structureScore}</p>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-white p-3">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">{surveyUi.scoreLabels.partyCommunication}</p>
+                        <p className="text-2xl font-semibold text-slate-900">{surveyScores.partyScore} / {surveyScores.communicationScore}</p>
+                      </div>
+                    </div>
+
+                    {surveySections.map((section) => (
+                      <section key={section.id} className="rounded-2xl border border-slate-200 bg-white/90 p-4">
+                        <h3 className="text-lg font-semibold text-slate-900">{section.title}</h3>
+                        <div className="mt-3 space-y-3">
+                          {section.questionIds.map((questionId, index) => (
+                            <div key={questionId} className="rounded-xl border border-slate-100 bg-slate-50/80 p-3">
+                              <p className="text-sm text-slate-700">{section.questions[index]}</p>
+                              <div className="mt-2 grid grid-cols-5 gap-2">
+                                {likertScale.map((value) => (
+                                  <label
+                                    key={`${questionId}-${value}`}
+                                    className={`cursor-pointer rounded-lg border px-2 py-2 text-center text-xs transition ${
+                                      likertAnswers[questionId] === value
+                                        ? "border-amber-500 bg-amber-100 text-amber-800"
+                                        : "border-slate-200 bg-white text-slate-600 hover:border-amber-300"
+                                    } ${answersLocked ? "pointer-events-none opacity-60" : ""}`}
+                                  >
+                                    <input
+                                      type="radio"
+                                      className="sr-only"
+                                      name={questionId}
+                                      value={value}
+                                      checked={likertAnswers[questionId] === value}
+                                      onChange={() => updateLikertAnswer(questionId as LikertQuestionId, value)}
+                                      disabled={answersLocked}
+                                    />
+                                    <span className="font-semibold">{value}</span>
+                                  </label>
+                                ))}
+                              </div>
+                              <div className="mt-1 hidden grid-cols-5 gap-2 text-[11px] text-slate-500 sm:grid">
+                                {likertLabels.map((label) => (
+                                  <span key={`${questionId}-${label}`} className="text-center">
+                                    {label}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    ))}
+
+                    <section className="rounded-2xl border border-slate-200 bg-white/90 p-4">
+                      <h3 className="text-lg font-semibold text-slate-900">{surveyUi.forcedChoiceHeading}</h3>
+                      <div className="mt-4 space-y-4">
+                        <div>
+                          <p className="text-sm font-medium text-slate-700">{forcedChoiceText.planningStyle.title}</p>
+                          <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                            {planningStyleOptions.map(([value, label]) => (
+                              <button
+                                key={value}
+                                type="button"
+                                className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                                  forcedChoices.planningStyle === value
                                     ? "border-amber-500 bg-amber-100 text-amber-800"
-                                    : "border-slate-200 bg-white text-slate-600 hover:border-amber-300"
-                                } ${answersLocked ? "pointer-events-none opacity-60" : ""}`}
+                                    : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
+                                }`}
+                                onClick={() => updateForcedChoice("planningStyle", value)}
+                                disabled={answersLocked}
                               >
-                                <input
-                                  type="radio"
-                                  className="sr-only"
-                                  name={questionId}
-                                  value={value}
-                                  checked={likertAnswers[questionId] === value}
-                                  onChange={() => updateLikertAnswer(questionId as LikertQuestionId, value)}
-                                  disabled={answersLocked}
-                                />
-                                <span className="font-semibold">{value}</span>
-                              </label>
-                            ))}
-                          </div>
-                          <div className="mt-1 hidden grid-cols-5 gap-2 text-[11px] text-slate-500 sm:grid">
-                            {likertLabels.map((label) => (
-                              <span key={`${questionId}-${label}`} className="text-center">
                                 {label}
-                              </span>
+                              </button>
                             ))}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </section>
-                ))}
 
-                <section className="rounded-2xl border border-slate-200 bg-white/90 p-4">
-                  <h3 className="text-lg font-semibold text-slate-900">{surveyUi.forcedChoiceHeading}</h3>
-                  <div className="mt-4 space-y-4">
-                    <div>
-                      <p className="text-sm font-medium text-slate-700">{forcedChoiceText.planningStyle.title}</p>
-                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        <div>
+                          <p className="text-sm font-medium text-slate-700">{forcedChoiceText.buddyPriority.title}</p>
+                          <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                            {buddyPriorityOptions.map(([value, label]) => (
+                              <button
+                                key={value}
+                                type="button"
+                                className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                                  forcedChoices.buddyPriority === value
+                                    ? "border-amber-500 bg-amber-100 text-amber-800"
+                                    : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
+                                }`}
+                                onClick={() => updateForcedChoice("buddyPriority", value)}
+                                disabled={answersLocked}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-sm font-medium text-slate-700">{forcedChoiceText.idealActivity.title}</p>
+                          <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                            {idealActivityOptions.map(([value, label]) => (
+                              <button
+                                key={value}
+                                type="button"
+                                className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                                  forcedChoices.idealActivity === value
+                                    ? "border-amber-500 bg-amber-100 text-amber-800"
+                                    : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
+                                }`}
+                                onClick={() => updateForcedChoice("idealActivity", value)}
+                                disabled={answersLocked}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-sm font-medium text-slate-700">{forcedChoiceText.timeStyle.title}</p>
+                          <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                            {timeStyleOptions.map(([value, label]) => (
+                              <button
+                                key={value}
+                                type="button"
+                                className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                                  forcedChoices.timeStyle === value
+                                    ? "border-amber-500 bg-amber-100 text-amber-800"
+                                    : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
+                                }`}
+                                onClick={() => updateForcedChoice("timeStyle", value)}
+                                disabled={answersLocked}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-200 bg-white/90 p-4">
+                      <p className="text-sm font-medium text-slate-700">{surveyUi.travelPrompt}</p>
+                      <div className="mt-2 flex gap-2">
                         <button
                           type="button"
-                          className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                            forcedChoices.planningStyle === "plan_flexible"
+                          className={`rounded-lg border px-3 py-2 text-sm transition ${
+                            travelAfterProgram
                               ? "border-amber-500 bg-amber-100 text-amber-800"
                               : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
                           }`}
-                          onClick={() => updateForcedChoice("planningStyle", "plan_flexible")}
+                          onClick={() => setTravelAfterProgram(true)}
                           disabled={answersLocked}
                         >
-                          {forcedChoiceText.planningStyle.options.plan_flexible}
+                          {surveyUi.yesLabel}
                         </button>
                         <button
                           type="button"
-                          className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                            forcedChoices.planningStyle === "spontaneous_plan"
+                          className={`rounded-lg border px-3 py-2 text-sm transition ${
+                            !travelAfterProgram
                               ? "border-amber-500 bg-amber-100 text-amber-800"
                               : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
                           }`}
-                          onClick={() => updateForcedChoice("planningStyle", "spontaneous_plan")}
+                          onClick={() => setTravelAfterProgram(false)}
                           disabled={answersLocked}
                         >
-                          {forcedChoiceText.planningStyle.options.spontaneous_plan}
+                          {surveyUi.noLabel}
                         </button>
                       </div>
-                    </div>
+                    </section>
 
-                    <div>
-                      <p className="text-sm font-medium text-slate-700">{forcedChoiceText.buddyPriority.title}</p>
-                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                        <button
-                          type="button"
-                          className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                            forcedChoices.buddyPriority === "fun_social"
-                              ? "border-amber-500 bg-amber-100 text-amber-800"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                          }`}
-                          onClick={() => updateForcedChoice("buddyPriority", "fun_social")}
-                          disabled={answersLocked}
-                        >
-                          {forcedChoiceText.buddyPriority.options.fun_social}
-                        </button>
-                        <button
-                          type="button"
-                          className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                            forcedChoices.buddyPriority === "calm_reliable"
-                              ? "border-amber-500 bg-amber-100 text-amber-800"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                          }`}
-                          onClick={() => updateForcedChoice("buddyPriority", "calm_reliable")}
-                          disabled={answersLocked}
-                        >
-                          {forcedChoiceText.buddyPriority.options.calm_reliable}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-medium text-slate-700">{forcedChoiceText.idealActivity.title}</p>
-                      <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                        <button
-                          type="button"
-                          className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                            forcedChoices.idealActivity === "party_social"
-                              ? "border-amber-500 bg-amber-100 text-amber-800"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                          }`}
-                          onClick={() => updateForcedChoice("idealActivity", "party_social")}
-                          disabled={answersLocked}
-                        >
-                          {forcedChoiceText.idealActivity.options.party_social}
-                        </button>
-                        <button
-                          type="button"
-                          className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                            forcedChoices.idealActivity === "cultural_museum"
-                              ? "border-amber-500 bg-amber-100 text-amber-800"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                          }`}
-                          onClick={() => updateForcedChoice("idealActivity", "cultural_museum")}
-                          disabled={answersLocked}
-                        >
-                          {forcedChoiceText.idealActivity.options.cultural_museum}
-                        </button>
-                        <button
-                          type="button"
-                          className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                            forcedChoices.idealActivity === "mixed"
-                              ? "border-amber-500 bg-amber-100 text-amber-800"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                          }`}
-                          onClick={() => updateForcedChoice("idealActivity", "mixed")}
-                          disabled={answersLocked}
-                        >
-                          {forcedChoiceText.idealActivity.options.mixed}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-medium text-slate-700">{forcedChoiceText.timeStyle.title}</p>
-                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                        <button
-                          type="button"
-                          className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                            forcedChoices.timeStyle === "early_bird"
-                              ? "border-amber-500 bg-amber-100 text-amber-800"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                          }`}
-                          onClick={() => updateForcedChoice("timeStyle", "early_bird")}
-                          disabled={answersLocked}
-                        >
-                          {forcedChoiceText.timeStyle.options.early_bird}
-                        </button>
-                        <button
-                          type="button"
-                          className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                            forcedChoices.timeStyle === "night_owl"
-                              ? "border-amber-500 bg-amber-100 text-amber-800"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                          }`}
-                          onClick={() => updateForcedChoice("timeStyle", "night_owl")}
-                          disabled={answersLocked}
-                        >
-                          {forcedChoiceText.timeStyle.options.night_owl}
-                        </button>
-                      </div>
-                    </div>
+                    <button className="btn-primary w-full px-4 py-3" onClick={saveProfile}>{t.saveAll}</button>
                   </div>
-                </section>
-
-                <section className="rounded-2xl border border-slate-200 bg-white/90 p-4">
-                  <p className="text-sm font-medium text-slate-700">{surveyUi.travelPrompt}</p>
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      type="button"
-                      className={`rounded-lg border px-3 py-2 text-sm transition ${
-                        travelAfterProgram
-                          ? "border-amber-500 bg-amber-100 text-amber-800"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                      }`}
-                      onClick={() => setTravelAfterProgram(true)}
-                      disabled={answersLocked}
-                    >
-                      {surveyUi.yesLabel}
-                    </button>
-                    <button
-                      type="button"
-                      className={`rounded-lg border px-3 py-2 text-sm transition ${
-                        !travelAfterProgram
-                          ? "border-amber-500 bg-amber-100 text-amber-800"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                      }`}
-                      onClick={() => setTravelAfterProgram(false)}
-                      disabled={answersLocked}
-                    >
-                      {surveyUi.noLabel}
-                    </button>
-                  </div>
-                </section>
-
-                <p className="muted text-sm">{answersLocked ? t.answerLockNotice : t.answerOpenNotice}</p>
-                <button className="btn-primary w-full px-4 py-3" onClick={saveProfile}>{t.saveAll}</button>
+                </div>
               </div>
-            </article>
+            ) : null}
           </section>
 
           <section className="flex flex-col gap-5">
@@ -841,6 +878,21 @@ export default function DashboardPage() {
             ) : null}
           </section>
         </div>
+
+        <AvatarCropper
+          open={avatarCropOpen}
+          image={avatarCropSource}
+          onCancel={closeAvatarCropper}
+          onApply={applyAvatarCrop}
+          text={{
+            title: t.cropPhotoTitle,
+            subtitle: t.cropPhotoSubtitle,
+            zoomLabel: t.cropZoom,
+            cancelLabel: t.cropCancel,
+            applyLabel: t.cropApply,
+            failedLabel: t.cropFailed,
+          }}
+        />
 
         {message ? <p className="status mt-4 text-sm">{message}</p> : null}
       </div>
