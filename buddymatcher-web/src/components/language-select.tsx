@@ -10,12 +10,12 @@ type LanguageSelectProps = {
 
 export function LanguageSelect({ locale, onChange, label = "Language" }: LanguageSelectProps) {
   return (
-    <label className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-cyan-100/80">
+    <label className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
       <span>{label}</span>
       <select
         value={locale}
         onChange={(e) => onChange(e.target.value as Locale)}
-        className="rounded-lg border border-cyan-300/40 bg-slate-950/70 px-2 py-1 text-xs text-cyan-100 outline-none transition focus:border-cyan-200"
+        className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 outline-none transition focus:border-blue-400"
       >
         <option value="tr">Turkce</option>
         <option value="de">Deutsch</option>

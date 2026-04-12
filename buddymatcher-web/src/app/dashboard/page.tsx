@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { LanguageSelect } from "@/components/language-select";
 import { text } from "@/lib/i18n";
@@ -48,6 +48,30 @@ const bigFiveFields = [
   "neuroticism",
 ] as const;
 
+const bigFiveLabels = {
+  tr: {
+    openness: "Aciklik",
+    conscientiousness: "Sorumluluk",
+    extraversion: "Disadonukluk",
+    agreeableness: "Uyumluluk",
+    neuroticism: "Duygusal Denge",
+  },
+  de: {
+    openness: "Offenheit",
+    conscientiousness: "Gewissenhaftigkeit",
+    extraversion: "Extraversion",
+    agreeableness: "Vertraeglichkeit",
+    neuroticism: "Emotionale Stabilitaet",
+  },
+  en: {
+    openness: "Openness",
+    conscientiousness: "Conscientiousness",
+    extraversion: "Extraversion",
+    agreeableness: "Agreeableness",
+    neuroticism: "Emotional Stability",
+  },
+} as const;
+
 export default function DashboardPage() {
   const { locale, setLocale } = useLocale("tr");
   const t = text[locale];
@@ -68,14 +92,14 @@ export default function DashboardPage() {
   const [travelAfterProgram, setTravelAfterProgram] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setMessage("");
 
     const meResp = await fetch("/api/me");
     if (!meResp.ok) {
       setLoading(false);
-      setMessage("Please login first.");
+      setMessage(t.pleaseLogin);
       return;
     }
 
@@ -101,12 +125,12 @@ export default function DashboardPage() {
     }
 
     setLoading(false);
-  };
+  }, [t.pleaseLogin]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadData();
-  }, []);
+  }, [loadData]);
 
   const profileReady = useMemo(() => !!user?.profile, [user]);
 
@@ -143,7 +167,7 @@ export default function DashboardPage() {
 
   async function importCsv() {
     if (!csvFile) {
-      setMessage("CSV dosyasi secin");
+      setMessage(t.selectCsv);
       return;
     }
 
@@ -159,7 +183,7 @@ export default function DashboardPage() {
       setMessage(data.error ?? "Import failed");
       return;
     }
-    setMessage(`CSV import tamamlandi: ${data.processed}`);
+    setMessage(`${t.importDone}: ${data.processed}`);
   }
 
   async function runMatching() {
@@ -169,152 +193,188 @@ export default function DashboardPage() {
       setMessage(data.error ?? "Matching failed");
       return;
     }
-    setMessage(`Eslestirme bitti. Cift sayisi: ${data.count}`);
+    setMessage(`${t.matchingDone}: ${data.count}`);
     await loadData();
   }
 
   if (loading) {
-    return <div className="p-8 text-cyan-100">Loading...</div>;
+    return (
+      <div className="app-shell">
+        <div className="app-wrap flex min-h-screen items-center justify-center">
+          <div className="panel p-6 text-slate-700">{t.loading}</div>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
-    return <div className="p-8 text-cyan-100">Please login at /login</div>;
+    return (
+      <div className="app-shell">
+        <div className="app-wrap flex min-h-screen items-center justify-center">
+          <div className="panel p-6 text-slate-700">{t.pleaseLogin}</div>
+        </div>
+      </div>
+    );
   }
 
+  const labels = bigFiveLabels[locale];
+
   return (
-    <div className="space-shell mx-auto min-h-screen w-full max-w-6xl px-4 py-8 sm:px-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-4xl text-cyan-50">{t.dashboard}</h1>
-          <p className="text-cyan-100/70">{user.name} - {user.email}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <LanguageSelect locale={locale} onChange={setLocale} label={t.language} />
-          <button className="btn-primary px-4 py-2" onClick={logout}>
-            {t.logout}
-          </button>
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="card rounded-2xl p-6">
-          <h2 className="mb-4 text-2xl">Profile</h2>
-          <div className="space-y-3">
-            <select
-              className="w-full rounded-xl border border-black/20 bg-white/90 px-4 py-3"
-              value={country}
-              onChange={(e) => setCountry(e.target.value as "TR" | "DE")}
-            >
-              <option value="TR">TR</option>
-              <option value="DE">DE</option>
-            </select>
-
-            {bigFiveFields.map((field) => (
-              <label className="block" key={field}>
-                <span className="mb-1 block text-sm capitalize">{field}</span>
-                <input
-                  type="range"
-                  min={1}
-                  max={10}
-                  step={1}
-                  value={
-                    {
-                      openness,
-                      conscientiousness,
-                      extraversion,
-                      agreeableness,
-                      neuroticism,
-                    }[field]
-                  }
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    if (field === "openness") setOpenness(val);
-                    if (field === "conscientiousness") setConscientiousness(val);
-                    if (field === "extraversion") setExtraversion(val);
-                    if (field === "agreeableness") setAgreeableness(val);
-                    if (field === "neuroticism") setNeuroticism(val);
-                  }}
-                  className="w-full"
-                />
-              </label>
-            ))}
-
-            <textarea
-              className="w-full rounded-xl border border-black/20 bg-white/90 px-4 py-3"
-              placeholder={t.interests}
-              value={interests}
-              onChange={(e) => setInterests(e.target.value)}
-              rows={3}
-            />
-            <textarea
-              className="w-full rounded-xl border border-black/20 bg-white/90 px-4 py-3"
-              placeholder={t.bio}
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows={3}
-            />
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={travelAfterProgram}
-                onChange={(e) => setTravelAfterProgram(e.target.checked)}
-              />
-              {t.travelAfter}
-            </label>
-
-            <button className="w-full rounded-xl bg-black px-4 py-3 text-white" onClick={saveProfile}>
-              {t.saveProfile}
-            </button>
+    <div className="app-shell">
+      <div className="app-wrap">
+        <header className="panel fade-in mb-5 p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="chip mb-2">{t.appName}</p>
+              <h1 className="text-3xl text-slate-900 sm:text-4xl">{t.dashboard}</h1>
+              <p className="muted mt-1 text-sm">
+                {user.name} - {user.email}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <LanguageSelect locale={locale} onChange={setLocale} label={t.language} />
+              <button className="btn-ghost px-4 py-2" onClick={logout}>
+                {t.logout}
+              </button>
+            </div>
           </div>
-        </section>
+        </header>
 
-        <section className="card rounded-2xl p-6">
-          <h2 className="mb-4 text-2xl">{t.yourBuddy}</h2>
-          {!profileReady ? (
-            <p className="text-cyan-100/70">Profilini kaydetmeden eslesme cikmaz.</p>
-          ) : matchData ? (
-            <div className="space-y-2">
-              <p className="text-lg font-medium">{matchData.buddy.name}</p>
-              <p className="text-sm text-cyan-100/70">{matchData.buddy.email}</p>
-              <p className="text-sm text-cyan-100/70">{matchData.buddy.country}</p>
-              <p className="text-sm">{matchData.buddy.interests}</p>
-              <p className="text-sm">{matchData.buddy.bio}</p>
-              <p className="rounded-lg bg-cyan-500/10 p-2 text-sm">
-                {t.score}: {matchData.score.toFixed(1)}
-              </p>
-              <p className="text-sm text-cyan-100/70">{matchData.reason}</p>
-            </div>
-          ) : (
-            <p className="text-cyan-100/70">Henuz eslesme uretilmedi.</p>
-          )}
-
-          {user.role === "ADMIN" ? (
-            <div className="mt-8 space-y-3 border-t border-black/10 pt-6">
-              <h3 className="text-xl">{t.adminPanel}</h3>
-              <input
-                type="file"
-                accept=".csv,text/csv"
-                onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)}
-                className="w-full rounded-xl border border-black/20 bg-white/90 p-3"
-              />
-              <button
-                className="w-full rounded-xl border border-black/30 px-4 py-3"
-                onClick={importCsv}
+        <div className="grid gap-5 xl:grid-cols-[1.25fr_0.85fr]">
+          <section className="panel rise-in p-5 sm:p-6">
+            <h2 className="text-2xl text-slate-900">{t.profileSection}</h2>
+            <div className="mt-4 space-y-4">
+              <select
+                className="field-select"
+                value={country}
+                onChange={(e) => setCountry(e.target.value as "TR" | "DE")}
               >
-                {t.importCsv}
-              </button>
-              <button className="w-full rounded-xl bg-black px-4 py-3 text-white" onClick={runMatching}>
-                {t.runMatching}
-              </button>
-              <p className="text-xs text-cyan-100/60">
-                CSV kolonlari: name,email,country,openness,conscientiousness,extraversion,agreeableness,neuroticism,interests,bio,travelAfterProgram,password
-              </p>
-            </div>
-          ) : null}
-        </section>
-      </div>
+                <option value="TR">TR</option>
+                <option value="DE">DE</option>
+              </select>
 
-      {message ? <p className="mt-4 rounded-xl bg-cyan-500/10 p-3 text-sm text-cyan-100">{message}</p> : null}
+              <div className="grid gap-3">
+                {bigFiveFields.map((field) => (
+                  <label className="block" key={field}>
+                    <div className="mb-1 flex items-center justify-between text-sm text-slate-700">
+                      <span>{labels[field]}</span>
+                      <span className="font-semibold text-blue-700">
+                        {
+                          {
+                            openness,
+                            conscientiousness,
+                            extraversion,
+                            agreeableness,
+                            neuroticism,
+                          }[field]
+                        }
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={1}
+                      max={10}
+                      step={1}
+                      value={
+                        {
+                          openness,
+                          conscientiousness,
+                          extraversion,
+                          agreeableness,
+                          neuroticism,
+                        }[field]
+                      }
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (field === "openness") setOpenness(val);
+                        if (field === "conscientiousness") setConscientiousness(val);
+                        if (field === "extraversion") setExtraversion(val);
+                        if (field === "agreeableness") setAgreeableness(val);
+                        if (field === "neuroticism") setNeuroticism(val);
+                      }}
+                      className="w-full accent-blue-600"
+                    />
+                  </label>
+                ))}
+              </div>
+
+              <textarea
+                className="field-textarea"
+                placeholder={t.interests}
+                value={interests}
+                onChange={(e) => setInterests(e.target.value)}
+                rows={3}
+              />
+              <textarea
+                className="field-textarea"
+                placeholder={t.bio}
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={3}
+              />
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={travelAfterProgram}
+                  onChange={(e) => setTravelAfterProgram(e.target.checked)}
+                />
+                {t.travelAfter}
+              </label>
+
+              <button className="btn-primary w-full px-4 py-3" onClick={saveProfile}>
+                {t.saveProfile}
+              </button>
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-5">
+            <div className="panel rise-in delay-1 p-5 sm:p-6">
+              <h2 className="text-2xl text-slate-900">{t.yourBuddy}</h2>
+              {!profileReady ? (
+                <p className="muted mt-3">{t.noProfileMatch}</p>
+              ) : matchData ? (
+                <div className="mt-3 space-y-2">
+                  <p className="text-lg font-semibold text-slate-900">{matchData.buddy.name}</p>
+                  <p className="muted text-sm">{matchData.buddy.email}</p>
+                  <p className="muted text-sm">{matchData.buddy.country}</p>
+                  <p className="text-sm text-slate-800">{matchData.buddy.interests}</p>
+                  <p className="text-sm text-slate-700">{matchData.buddy.bio}</p>
+                  <p className="status text-sm">
+                    {t.score}: {matchData.score.toFixed(1)}
+                  </p>
+                  <p className="muted text-sm">{matchData.reason}</p>
+                </div>
+              ) : (
+                <p className="muted mt-3">{t.noMatchYet}</p>
+              )}
+            </div>
+
+            {user.role === "ADMIN" ? (
+              <div className="panel rise-in delay-2 p-5 sm:p-6">
+                <h3 className="text-xl text-slate-900">{t.adminPanel}</h3>
+                <div className="mt-4 space-y-3">
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)}
+                    className="field"
+                  />
+                  <button className="btn-ghost w-full px-4 py-3" onClick={importCsv}>
+                    {t.importCsv}
+                  </button>
+                  <button className="btn-primary w-full px-4 py-3" onClick={runMatching}>
+                    {t.runMatching}
+                  </button>
+                  <p className="muted text-xs">
+                    {t.csvColumns}: name,email,country,openness,conscientiousness,extraversion,agreeableness,neuroticism,interests,bio,travelAfterProgram,password
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </section>
+        </div>
+        {message ? <p className="status mt-4 text-sm">{message}</p> : null}
+      </div>
     </div>
   );
 }

@@ -40,52 +40,64 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="space-shell mx-auto flex min-h-screen w-full max-w-xl items-center px-4 py-10">
-      <div className="card fade-in w-full rounded-2xl p-8">
-        <div className="mb-5 flex items-center justify-between">
-          <h1 className="text-3xl text-cyan-50">{t.register}</h1>
-          <LanguageSelect locale={locale} onChange={setLocale} label={t.language} />
+    <div className="app-shell">
+      <div className="app-wrap flex min-h-screen items-center">
+        <div className="panel fade-in w-full p-6 sm:p-8">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-3xl text-slate-900">{t.register}</h1>
+              <p className="muted mt-2 text-sm">{t.registerSubtitle}</p>
+            </div>
+            <LanguageSelect locale={locale} onChange={setLocale} label={t.language} />
+          </div>
+
+          <form className="rise-in grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
+            <div className="sm:col-span-2">
+              <input
+                className="field"
+                placeholder={t.name}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <input
+                className="field"
+                placeholder={t.email}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                required
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <input
+                className="field"
+                placeholder={t.password}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                required
+              />
+            </div>
+            {error ? <p className="sm:col-span-2 text-sm text-rose-600">{error}</p> : null}
+            <button
+              disabled={loading}
+              className="btn-primary sm:col-span-2 w-full px-4 py-3 disabled:opacity-50"
+              type="submit"
+            >
+              {loading ? "..." : t.register}
+            </button>
+          </form>
+
+          <p className="muted mt-5 text-sm">
+            {t.login} ?{" "}
+            <Link href="/login" className="font-semibold text-blue-700 hover:text-blue-800">
+              {t.login}
+            </Link>
+          </p>
         </div>
-
-        <form className="space-y-4 rise-in" onSubmit={onSubmit}>
-          <input
-            className="field"
-            placeholder={t.name}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <input
-            className="field"
-            placeholder={t.email}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-            required
-          />
-          <input
-            className="field"
-            placeholder={t.password}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            required
-          />
-          {error ? <p className="text-sm text-rose-300">{error}</p> : null}
-          <button
-            disabled={loading}
-            className="btn-primary w-full px-4 py-3 disabled:opacity-50"
-            type="submit"
-          >
-            {loading ? "..." : t.register}
-          </button>
-        </form>
-
-        <p className="mt-4 text-sm text-cyan-100/70">
-          <Link href="/login" className="underline underline-offset-4">
-            {t.login}
-          </Link>
-        </p>
       </div>
     </div>
   );
