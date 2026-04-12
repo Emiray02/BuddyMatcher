@@ -3,6 +3,9 @@ export type Locale = "tr" | "de" | "en";
 export const text = {
   tr: {
     appName: "BuddyMatcher",
+    welcomeTitle: "Hos geldin",
+    welcomeSubtitle: "Buddy eslestirme yolculuguna baslamak icin hazirsan devam edelim.",
+    welcomeBack: "Tekrar hos geldin. Devam etmek icin giris yap.",
     heroTitle: "Kulturel degisim icin akilli buddy eslestirme",
     heroBody:
       "Katilimcilari karakter uyumu ve ortak ilgi alanlarina gore eslestir. Bir haftalik programi daha verimli, daha sosyal ve daha unutulmaz hale getir.",
@@ -51,6 +54,9 @@ export const text = {
   },
   de: {
     appName: "BuddyMatcher",
+    welcomeTitle: "Willkommen",
+    welcomeSubtitle: "Wenn du bereit bist, starten wir jetzt mit deinem Buddy-Matching.",
+    welcomeBack: "Willkommen zurueck. Bitte einloggen, um fortzufahren.",
     heroTitle: "Intelligentes Buddy Matching fuer kulturellen Austausch",
     heroBody:
       "Ordne je eine deutsche und eine turkische Person anhand von Persoenlichkeit und Interessen optimal zu und mache die Austauschwoche wirkungsvoller.",
@@ -99,6 +105,9 @@ export const text = {
   },
   en: {
     appName: "BuddyMatcher",
+    welcomeTitle: "Welcome",
+    welcomeSubtitle: "If you are ready, let us begin your buddy matching journey.",
+    welcomeBack: "Welcome back. Sign in to continue.",
     heroTitle: "Professional buddy matching for cultural exchange",
     heroBody:
       "Pair one Turkish and one German participant using personality and interests to create a stronger, more memorable exchange week.",
