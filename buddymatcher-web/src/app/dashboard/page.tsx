@@ -129,6 +129,9 @@ export default function DashboardPage() {
   const [interests, setInterests] = useState("");
   const [travelAfterProgram, setTravelAfterProgram] = useState(false);
   const [answersEditable, setAnswersEditable] = useState(true);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
@@ -243,6 +246,41 @@ export default function DashboardPage() {
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/login";
+  }
+
+  async function changePassword() {
+    if (newPassword !== confirmPassword) {
+      setMessage(t.passwordMismatch);
+      return;
+    }
+
+    const response = await fetch("/api/auth/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentPassword,
+        newPassword,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const apiError = data.error as string | undefined;
+      if (apiError === "Current password is incorrect") {
+        setMessage(t.currentPasswordWrong);
+      } else if (apiError === "New password must be different from current password") {
+        setMessage(t.newPasswordMustDiffer);
+      } else {
+        setMessage(apiError ?? "Change password failed");
+      }
+      return;
+    }
+
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setMessage(t.passwordChanged);
   }
 
   async function importCsv() {
@@ -424,6 +462,39 @@ export default function DashboardPage() {
           </section>
 
           <section className="flex flex-col gap-5">
+            <article className="panel p-5 sm:p-6">
+              <h2 className="text-2xl text-slate-900">{t.changePasswordSection}</h2>
+              <div className="mt-4 space-y-3">
+                <input
+                  className="field"
+                  type="password"
+                  minLength={8}
+                  placeholder={t.currentPassword}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
+                <input
+                  className="field"
+                  type="password"
+                  minLength={8}
+                  placeholder={t.newPassword}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <input
+                  className="field"
+                  type="password"
+                  minLength={8}
+                  placeholder={t.confirmPassword}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                <button className="btn-ghost w-full px-4 py-3" onClick={changePassword}>
+                  {t.changePasswordAction}
+                </button>
+              </div>
+            </article>
+
             <article className="panel p-5 sm:p-6">
               <h2 className="text-2xl text-slate-900">{t.yourBuddy}</h2>
               {!user.profile ? (
