@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f7f3;
-  --foreground: #1f1e1a;
-  --accent: #e5522f;
-  --accent-soft: #f7cf8b;
+  --background: #040612;
+  --foreground: #def5ff;
+  --accent: #56d7ff;
+  --accent-soft: #8f7bff;
 }
 
 @theme inline {
@@ -18,20 +18,158 @@ body {
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
   background-image:
-    radial-gradient(circle at 15% 20%, color-mix(in oklab, var(--accent-soft) 60%, white) 0, transparent 45%),
-    radial-gradient(circle at 85% 80%, color-mix(in oklab, var(--accent) 15%, white) 0, transparent 38%),
-    linear-gradient(140deg, #fffaf0 0%, #f2f5ff 100%);
+    radial-gradient(circle at 10% 18%, rgba(143, 123, 255, 0.34) 0%, transparent 36%),
+    radial-gradient(circle at 82% 82%, rgba(86, 215, 255, 0.28) 0%, transparent 30%),
+    radial-gradient(circle at 30% 75%, rgba(56, 63, 172, 0.4) 0%, transparent 43%),
+    linear-gradient(150deg, #030512 0%, #080a1f 45%, #040612 100%);
+  position: relative;
+  overflow-x: hidden;
 }
 
 h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-display), sans-serif;
+  letter-spacing: 0.02em;
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(31, 30, 26, 0.12);
-  backdrop-filter: blur(6px);
+  background: linear-gradient(160deg, rgba(13, 16, 42, 0.86), rgba(8, 12, 30, 0.92));
+  border: 1px solid rgba(109, 213, 255, 0.25);
+  box-shadow: 0 0 0 1px rgba(89, 164, 255, 0.16), 0 25px 80px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+}
+
+.space-shell {
+  position: relative;
+}
+
+.space-shell::before {
+  content: "";
+  position: fixed;
+  inset: -30% -20%;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    radial-gradient(2px 2px at 20% 30%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 80% 20%, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(1px 1px at 60% 75%, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(2px 2px at 45% 55%, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(1px 1px at 15% 80%, rgba(255, 255, 255, 0.7), transparent);
+  background-size: 220px 220px;
+  animation: drift 36s linear infinite;
+}
+
+.aurora {
+  position: absolute;
+  inset: auto -10% -30% -10%;
+  height: 420px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, rgba(86, 215, 255, 0.2), rgba(143, 123, 255, 0.12), transparent 68%);
+  filter: blur(28px);
+  animation: pulse 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.fade-in {
+  animation: fadeIn 0.9s ease both;
+}
+
+.rise-in {
+  animation: riseIn 0.75s ease both;
+}
+
+.stagger-1 {
+  animation-delay: 0.08s;
+}
+
+.stagger-2 {
+  animation-delay: 0.16s;
+}
+
+.stagger-3 {
+  animation-delay: 0.24s;
+}
+
+.field {
+  width: 100%;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(130, 224, 255, 0.3);
+  background: rgba(10, 16, 40, 0.8);
+  color: #e8faff;
+  padding: 0.75rem 0.9rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.field::placeholder {
+  color: rgba(194, 233, 255, 0.58);
+}
+
+.field:focus {
+  outline: none;
+  border-color: rgba(122, 230, 255, 0.9);
+  box-shadow: 0 0 0 3px rgba(105, 192, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  border-radius: 0.8rem;
+  background: linear-gradient(135deg, #58d8ff 0%, #6f82ff 100%);
+  color: #051022;
+  font-weight: 700;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.btn-ghost {
+  border-radius: 0.8rem;
+  border: 1px solid rgba(122, 230, 255, 0.4);
+  color: #c6ecff;
+  background: rgba(11, 17, 43, 0.6);
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-120px, -140px, 0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

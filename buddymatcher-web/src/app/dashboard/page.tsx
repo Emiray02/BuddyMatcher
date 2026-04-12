@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { Locale, text } from "@/lib/i18n";
+import { LanguageSelect } from "@/components/language-select";
+import { text } from "@/lib/i18n";
+import { useLocale } from "@/lib/use-locale";
 
 type MeResponse = {
   user: {
@@ -47,7 +49,7 @@ const bigFiveFields = [
 ] as const;
 
 export default function DashboardPage() {
-  const [locale, setLocale] = useState<Locale>("tr");
+  const { locale, setLocale } = useLocale("tr");
   const t = text[locale];
 
   const [loading, setLoading] = useState(true);
@@ -172,28 +174,23 @@ export default function DashboardPage() {
   }
 
   if (loading) {
-    return <div className="p-8">Loading...</div>;
+    return <div className="p-8 text-cyan-100">Loading...</div>;
   }
 
   if (!user) {
-    return <div className="p-8">Please login at /login</div>;
+    return <div className="p-8 text-cyan-100">Please login at /login</div>;
   }
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 sm:px-8">
+    <div className="space-shell mx-auto min-h-screen w-full max-w-6xl px-4 py-8 sm:px-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-4xl">{t.dashboard}</h1>
-          <p className="text-black/70">{user.name} - {user.email}</p>
+          <h1 className="text-4xl text-cyan-50">{t.dashboard}</h1>
+          <p className="text-cyan-100/70">{user.name} - {user.email}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            className="rounded-lg border border-black/20 px-3 py-1 text-sm"
-            onClick={() => setLocale(locale === "tr" ? "de" : "tr")}
-          >
-            {locale.toUpperCase()}
-          </button>
-          <button className="rounded-lg bg-black px-4 py-2 text-white" onClick={logout}>
+          <LanguageSelect locale={locale} onChange={setLocale} label={t.language} />
+          <button className="btn-primary px-4 py-2" onClick={logout}>
             {t.logout}
           </button>
         </div>
@@ -274,21 +271,21 @@ export default function DashboardPage() {
         <section className="card rounded-2xl p-6">
           <h2 className="mb-4 text-2xl">{t.yourBuddy}</h2>
           {!profileReady ? (
-            <p className="text-black/70">Profilini kaydetmeden eslesme cikmaz.</p>
+            <p className="text-cyan-100/70">Profilini kaydetmeden eslesme cikmaz.</p>
           ) : matchData ? (
             <div className="space-y-2">
               <p className="text-lg font-medium">{matchData.buddy.name}</p>
-              <p className="text-sm text-black/70">{matchData.buddy.email}</p>
-              <p className="text-sm text-black/70">{matchData.buddy.country}</p>
+              <p className="text-sm text-cyan-100/70">{matchData.buddy.email}</p>
+              <p className="text-sm text-cyan-100/70">{matchData.buddy.country}</p>
               <p className="text-sm">{matchData.buddy.interests}</p>
               <p className="text-sm">{matchData.buddy.bio}</p>
-              <p className="rounded-lg bg-black/5 p-2 text-sm">
+              <p className="rounded-lg bg-cyan-500/10 p-2 text-sm">
                 {t.score}: {matchData.score.toFixed(1)}
               </p>
-              <p className="text-sm text-black/70">{matchData.reason}</p>
+              <p className="text-sm text-cyan-100/70">{matchData.reason}</p>
             </div>
           ) : (
-            <p className="text-black/70">Henuz eslesme uretilmedi.</p>
+            <p className="text-cyan-100/70">Henuz eslesme uretilmedi.</p>
           )}
 
           {user.role === "ADMIN" ? (
@@ -309,7 +306,7 @@ export default function DashboardPage() {
               <button className="w-full rounded-xl bg-black px-4 py-3 text-white" onClick={runMatching}>
                 {t.runMatching}
               </button>
-              <p className="text-xs text-black/60">
+              <p className="text-xs text-cyan-100/60">
                 CSV kolonlari: name,email,country,openness,conscientiousness,extraversion,agreeableness,neuroticism,interests,bio,travelAfterProgram,password
               </p>
             </div>
@@ -317,7 +314,7 @@ export default function DashboardPage() {
         </section>
       </div>
 
-      {message ? <p className="mt-4 rounded-xl bg-white/70 p-3 text-sm">{message}</p> : null}
+      {message ? <p className="mt-4 rounded-xl bg-cyan-500/10 p-3 text-sm text-cyan-100">{message}</p> : null}
     </div>
   );
 }

@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Playfair_Display } from "next/font/google";
+import { Orbitron, Exo_2 } from "next/font/google";
 import "./globals.css";
 
-const displayFont = Playfair_Display({
+const displayFont = Orbitron({
   variable: "--font-display",
   subsets: ["latin"],
 });
 
-const bodyFont = Space_Grotesk({
+const bodyFont = Exo_2({
   variable: "--font-body",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: "BuddyMatcher",
-  description: "TR-DE buddy matching for cultural exchange programs",
+  description: "Space-themed TR-DE buddy matching platform",
 };
 
 export default function RootLayout({
