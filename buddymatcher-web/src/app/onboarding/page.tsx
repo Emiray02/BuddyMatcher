@@ -97,18 +97,6 @@ export default function OnboardingPage() {
     })();
   }, [router]);
 
-  useEffect(() => {
-    if (!showIntro || stage !== "survey") {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setShowIntro(false);
-    }, 3600);
-
-    return () => window.clearTimeout(timer);
-  }, [showIntro, stage]);
-
   const forcedStepIndex = surveySections.length;
   const isForcedStep = surveyStep === forcedStepIndex;
   const currentSection = !isForcedStep ? surveySections[surveyStep] : null;

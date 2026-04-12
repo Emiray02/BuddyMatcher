@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { LanguageSelect } from "@/components/language-select";
 import { text } from "@/lib/i18n";
@@ -17,6 +17,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [playTransition, setPlayTransition] = useState(false);
+  const transitionTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (transitionTimeoutRef.current !== null) {
+        window.clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,8 +44,8 @@ export default function LoginPage() {
       onboardingCompleted?: boolean;
     };
 
-    setLoading(false);
     if (!response.ok) {
+      setLoading(false);
       const errorCode = data.errorCode as string | undefined;
       if (errorCode === "INVALID_CREDENTIALS") {
         setError(t.invalidCredentials);
@@ -44,16 +54,23 @@ export default function LoginPage() {
       }
       return;
     }
-    if (data.role === "ADMIN") {
-      router.push("/dashboard");
-      return;
-    }
 
-    router.push(data.onboardingCompleted ? "/participants" : "/onboarding");
+    const targetRoute =
+      data.role === "ADMIN"
+        ? "/dashboard"
+        : data.onboardingCompleted
+          ? "/participants"
+          : "/onboarding";
+
+    setPlayTransition(true);
+    transitionTimeoutRef.current = window.setTimeout(() => {
+      router.push(targetRoute);
+    }, 700);
   }
 
   return (
     <div className="app-shell">
+      {playTransition ? <div className="login-transition-layer" /> : null}
       <div className="app-wrap flex min-h-screen items-center">
         <div className="panel fade-in mx-auto w-full max-w-lg p-7 sm:p-8">
           <div className="mb-6 flex justify-end">
@@ -81,7 +98,7 @@ export default function LoginPage() {
             />
             {error ? <p className="text-sm text-rose-600">{error}</p> : null}
             <button
-              disabled={loading}
+              disabled={loading || playTransition}
               className="btn-primary w-full px-4 py-3 disabled:opacity-50"
               type="submit"
             >

@@ -270,6 +270,16 @@ h4 {
   box-shadow: 0 0 0 4px rgba(244, 176, 30, 0.16);
 }
 
+.login-transition-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  background: linear-gradient(180deg, #3a2b10 0%, #2f240b 100%);
+  transform-origin: center;
+  animation: loginCloseOpen 0.7s cubic-bezier(0.6, 0, 0.4, 1) forwards;
+}
+
 .fade-in {
   animation: fadeIn 0.8s ease both;
 }
@@ -346,13 +356,33 @@ h4 {
   }
 }
 
+@keyframes loginCloseOpen {
+  0% {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  34% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  66% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fade-in,
   .rise-in,
   .orb,
   .onboarding-intro-card,
   .intro-glow,
-  .intro-badge {
+  .intro-badge,
+  .login-transition-layer {
     animation: none !important;
   }
 }
