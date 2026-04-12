@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { generatePublicTagsFromAnswers } from "@/lib/tags";
 
 type CsvRow = {
   name: string;
@@ -17,6 +18,10 @@ type CsvRow = {
   neuroticism: string;
   interests: string;
   bio?: string;
+  avatarUrl?: string;
+  instagramUrl?: string;
+  linkedinUrl?: string;
+  xUrl?: string;
   travelAfterProgram?: string;
   password?: string;
 };
@@ -76,6 +81,17 @@ export async function POST(request: Request) {
 
       const plainPassword = row.password?.trim() || defaultPassword;
       const passwordHash = await bcrypt.hash(plainPassword, 12);
+      const answers = {
+        openness: toInt(row.openness),
+        conscientiousness: toInt(row.conscientiousness),
+        extraversion: toInt(row.extraversion),
+        agreeableness: toInt(row.agreeableness),
+        neuroticism: toInt(row.neuroticism),
+        interests: row.interests || "",
+        travelAfterProgram: toBool(row.travelAfterProgram),
+      };
+      const tags = generatePublicTagsFromAnswers(answers);
+      const avatarUrl = row.avatarUrl?.trim() || `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name?.trim() || email)}&background=1f74ff&color=fff`;
 
       const user = await prisma.user.upsert({
         where: { email },
@@ -96,25 +112,37 @@ export async function POST(request: Request) {
         create: {
           userId: user.id,
           country: toCountry(row.country),
-          openness: toInt(row.openness),
-          conscientiousness: toInt(row.conscientiousness),
-          extraversion: toInt(row.extraversion),
-          agreeableness: toInt(row.agreeableness),
-          neuroticism: toInt(row.neuroticism),
-          interests: row.interests || "",
+          openness: answers.openness,
+          conscientiousness: answers.conscientiousness,
+          extraversion: answers.extraversion,
+          agreeableness: answers.agreeableness,
+          neuroticism: answers.neuroticism,
+          interests: answers.interests,
           bio: row.bio || "",
-          travelAfterProgram: toBool(row.travelAfterProgram),
+          travelAfterProgram: answers.travelAfterProgram,
+          avatarUrl,
+          instagramUrl: row.instagramUrl?.trim() || "",
+          linkedinUrl: row.linkedinUrl?.trim() || "",
+          xUrl: row.xUrl?.trim() || "",
+          publicTags: tags,
+          answersEditable: false,
         },
         update: {
           country: toCountry(row.country),
-          openness: toInt(row.openness),
-          conscientiousness: toInt(row.conscientiousness),
-          extraversion: toInt(row.extraversion),
-          agreeableness: toInt(row.agreeableness),
-          neuroticism: toInt(row.neuroticism),
-          interests: row.interests || "",
+          openness: answers.openness,
+          conscientiousness: answers.conscientiousness,
+          extraversion: answers.extraversion,
+          agreeableness: answers.agreeableness,
+          neuroticism: answers.neuroticism,
+          interests: answers.interests,
           bio: row.bio || "",
-          travelAfterProgram: toBool(row.travelAfterProgram),
+          travelAfterProgram: answers.travelAfterProgram,
+          avatarUrl,
+          instagramUrl: row.instagramUrl?.trim() || "",
+          linkedinUrl: row.linkedinUrl?.trim() || "",
+          xUrl: row.xUrl?.trim() || "",
+          publicTags: tags,
+          answersEditable: false,
         },
       });
       processed += 1;

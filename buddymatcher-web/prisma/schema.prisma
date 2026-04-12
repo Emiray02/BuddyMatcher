@@ -39,6 +39,12 @@ model User {
 model Profile {
   id                  String   @id @default(cuid())
   userId              String   @unique
+  avatarUrl           String   @default("")
+  instagramUrl        String   @default("")
+  linkedinUrl         String   @default("")
+  xUrl                String   @default("")
+  publicTags          String[] @default([])
+  answersEditable     Boolean  @default(true)
   country             Country
   openness            Int
   conscientiousness   Int
@@ -46,7 +52,7 @@ model Profile {
   agreeableness       Int
   neuroticism         Int
   interests           String
-  bio                 String?
+  bio                 String   @default("")
   travelAfterProgram  Boolean  @default(false)
   updatedAt           DateTime @updatedAt
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)

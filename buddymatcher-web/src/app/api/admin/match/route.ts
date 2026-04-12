@@ -22,6 +22,14 @@ export async function POST() {
       );
     }
 
+    const missingPhotos = participants.filter((p) => !p.profile?.avatarUrl).length;
+    if (missingPhotos > 0) {
+      return NextResponse.json(
+        { error: `${missingPhotos} kullanicinin profil fotografi eksik.` },
+        { status: 400 },
+      );
+    }
+
     const generated = generateOptimalBuddyMatches(participants);
 
     const result = await prisma.$transaction(async (tx) => {

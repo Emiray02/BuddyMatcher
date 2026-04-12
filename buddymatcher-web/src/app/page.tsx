@@ -34,6 +34,9 @@ export default function Home() {
             <Link href="/register" className="btn-ghost px-6 py-3 text-center">
               {t.register}
             </Link>
+            <Link href="/participants" className="btn-ghost px-6 py-3 text-center">
+              {t.participantsNav}
+            </Link>
           </div>
         </main>
       </div>

@@ -37,9 +37,13 @@ export async function GET() {
         buddy: {
           name: buddy.name,
           email: buddy.email,
+          avatarUrl: buddy.profile?.avatarUrl,
           country: buddy.profile?.country,
-          interests: buddy.profile?.interests,
           bio: buddy.profile?.bio,
+          publicTags: buddy.profile?.publicTags ?? [],
+          instagramUrl: buddy.profile?.instagramUrl,
+          linkedinUrl: buddy.profile?.linkedinUrl,
+          xUrl: buddy.profile?.xUrl,
         },
       },
     });
