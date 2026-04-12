@@ -608,25 +608,20 @@ export default function DashboardPage() {
                               <p className="min-h-[2.75rem] text-sm text-slate-700">{section.questions[index]}</p>
                               <div className="mt-2 grid grid-cols-5 gap-2">
                                 {likertScale.map((value) => (
-                                  <label
+                                  <button
                                     key={`${questionId}-${value}`}
+                                    type="button"
+                                    aria-pressed={likertAnswers[questionId] === value}
                                     className={`cursor-pointer rounded-lg border px-2 py-2 text-center text-xs transition ${
                                       likertAnswers[questionId] === value
                                         ? "border-amber-500 bg-amber-100 text-amber-800"
                                         : "border-slate-200 bg-white text-slate-600 hover:border-amber-300"
                                     } ${answersLocked ? "pointer-events-none opacity-60" : ""}`}
+                                    onClick={() => updateLikertAnswer(questionId as LikertQuestionId, value)}
+                                    disabled={answersLocked}
                                   >
-                                    <input
-                                      type="radio"
-                                      className="sr-only"
-                                      name={questionId}
-                                      value={value}
-                                      checked={likertAnswers[questionId] === value}
-                                      onChange={() => updateLikertAnswer(questionId as LikertQuestionId, value)}
-                                      disabled={answersLocked}
-                                    />
                                     <span className="font-semibold">{value}</span>
-                                  </label>
+                                  </button>
                                 ))}
                               </div>
                               <div className="mt-1 hidden grid-cols-5 gap-2 text-[11px] text-slate-500 sm:grid">
