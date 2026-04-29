@@ -7,45 +7,52 @@ export async function GET() {
   try {
     const session = await requireUser();
 
-    const latestRound = await prisma.matchRound.findFirst({
-      orderBy: { createdAt: "desc" },
+    const latestPublishedRound = await prisma.matchRound.findFirst({
+      where: { published: true },
+      orderBy: { publishedAt: "desc" },
       include: {
-        matches: {
+        groups: {
           where: {
-            OR: [{ personAId: session.sub }, { personBId: session.sub }],
+            members: { some: { userId: session.sub } },
           },
           include: {
-            personA: { include: { profile: true } },
-            personB: { include: { profile: true } },
+            members: {
+              include: {
+                user: { include: { profile: true } },
+              },
+            },
           },
           take: 1,
         },
       },
     });
 
-    const match = latestRound?.matches[0] ?? null;
-    if (!match) {
+    const group = latestPublishedRound?.groups[0] ?? null;
+    if (!group) {
       return NextResponse.json({ match: null });
     }
 
-    const buddy = match.personAId === session.sub ? match.personB : match.personA;
+    const buddies = group.members
+      .filter((m) => m.userId !== session.sub)
+      .map((m) => ({
+        id: m.user.id,
+        name: m.user.name,
+        email: m.user.email,
+        avatarUrl: m.user.profile?.avatarUrl ?? null,
+        country: m.user.profile?.country ?? null,
+        bio: m.user.profile?.bio ?? null,
+        publicTags: m.user.profile?.publicTags ?? [],
+        instagramUrl: m.user.profile?.instagramUrl ?? null,
+        linkedinUrl: m.user.profile?.linkedinUrl ?? null,
+        xUrl: m.user.profile?.xUrl ?? null,
+      }));
+
     return NextResponse.json({
       match: {
-        id: match.id,
-        score: match.score,
-        reason: match.reason,
-        buddy: {
-          id: buddy.id,
-          name: buddy.name,
-          email: buddy.email,
-          avatarUrl: buddy.profile?.avatarUrl,
-          country: buddy.profile?.country,
-          bio: buddy.profile?.bio,
-          publicTags: buddy.profile?.publicTags ?? [],
-          instagramUrl: buddy.profile?.instagramUrl,
-          linkedinUrl: buddy.profile?.linkedinUrl,
-          xUrl: buddy.profile?.xUrl,
-        },
+        groupId: group.id,
+        score: group.score,
+        reason: group.reason,
+        buddies,
       },
     });
   } catch {

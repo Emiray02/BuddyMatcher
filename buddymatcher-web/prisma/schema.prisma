@@ -34,6 +34,7 @@ model User {
   matchesAsA   Match[]     @relation("MatchA")
   matchesAsB   Match[]     @relation("MatchB")
   rounds       MatchRound[]
+  groupMemberships MatchGroupMember[]
   resetTokens  PasswordResetToken[]
 }
 
@@ -72,11 +73,33 @@ model Profile {
 }
 
 model MatchRound {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
+  id          String       @id @default(cuid())
+  createdAt   DateTime     @default(now())
   createdById String
-  createdBy   User     @relation(fields: [createdById], references: [id])
+  published   Boolean      @default(false)
+  publishedAt DateTime?
+  createdBy   User         @relation(fields: [createdById], references: [id])
   matches     Match[]
+  groups      MatchGroup[]
+}
+
+model MatchGroup {
+  id      String             @id @default(cuid())
+  roundId String
+  score   Float
+  reason  String?
+  round   MatchRound         @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  members MatchGroupMember[]
+}
+
+model MatchGroupMember {
+  id      String     @id @default(cuid())
+  groupId String
+  userId  String
+  group   MatchGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user    User       @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
 }
 
 model Match {

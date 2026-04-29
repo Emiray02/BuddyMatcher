@@ -209,6 +209,8 @@ export function generateOptimalBuddyMatches(participants: Participant[]): MatchR
 
   const assignment = hungarian(costMatrix);
 
+  const assignment = hungarian(costMatrix);
+
   return assignment.map((deIndex, trIndex) => {
     const trUser = tr[trIndex];
     const deUser = de[deIndex];
@@ -218,6 +220,70 @@ export function generateOptimalBuddyMatches(participants: Participant[]): MatchR
       personBId: deUser.id,
       score,
       reason: buildReason(trUser.profile as Profile, deUser.profile as Profile, score),
+    };
+  });
+}
+
+// ── 2 TR + 1 DE group matching ────────────────────────────────────────────────
+
+export type GroupMatchResult = {
+  memberIds: string[]; // [TR1, TR2, DE]
+  score: number;
+  reason: string;
+};
+
+export function generateGroupMatches(participants: Participant[]): GroupMatchResult[] {
+  const withProfile = participants.filter((p) => p.profile);
+
+  const tr = withProfile.filter((p) => p.profile?.country === Country.TR);
+  const de = withProfile.filter((p) => p.profile?.country === Country.DE);
+
+  if (tr.length === 0 || de.length === 0) {
+    throw new Error("Eşleştirme için hem TR hem DE katılımcı gerekli.");
+  }
+
+  if (tr.length !== de.length * 2) {
+    throw new Error(
+      `Grup eşleştirme için TR katılımcı sayısı DE sayısının tam 2 katı olmalı. (TR: ${tr.length}, DE: ${de.length})`,
+    );
+  }
+
+  // Duplicate DE entries → 2 slots per DE person (indices 0..N-1 and N..2N-1)
+  const deSlots = [...de, ...de];
+
+  const costMatrix: number[][] = tr.map((trUser) =>
+    deSlots.map((deUser) => 100 - compatibilityScore(trUser.profile as Profile, deUser.profile as Profile)),
+  );
+
+  const assignment = hungarian(costMatrix);
+
+  // Group TR members by their assigned DE person
+  const groupMap = new Map<string, { trs: Array<{ user: Participant; score: number }>; de: Participant }>();
+
+  assignment.forEach((deSlotIdx, trIdx) => {
+    const trUser = tr[trIdx];
+    const deUser = deSlots[deSlotIdx];
+    const score = 100 - costMatrix[trIdx][deSlotIdx];
+
+    if (!groupMap.has(deUser.id)) {
+      groupMap.set(deUser.id, { trs: [], de: deUser });
+    }
+    groupMap.get(deUser.id)!.trs.push({ user: trUser, score });
+  });
+
+  return Array.from(groupMap.values()).map(({ trs, de: deUser }) => {
+    const avgScore = trs.reduce((s, t) => s + t.score, 0) / trs.length;
+    const tr1deScore = trs[0]?.score.toFixed(1) ?? "?";
+    const tr2deScore = trs[1]?.score.toFixed(1) ?? "?";
+    const tr1tr2Score = trs.length >= 2
+      ? compatibilityScore(trs[0].user.profile as Profile, trs[1].user.profile as Profile).toFixed(1)
+      : "?";
+    const reason = `Group compatibility: ${clampScore(avgScore).toFixed(1)}. TR1↔DE: ${tr1deScore}, TR2↔DE: ${tr2deScore}, TR1↔TR2: ${tr1tr2Score}.`;
+
+    return {
+      memberIds: [trs[0].user.id, trs[1].user.id, deUser.id],
+      score: clampScore(avgScore),
+      reason,
     };
   });
 }

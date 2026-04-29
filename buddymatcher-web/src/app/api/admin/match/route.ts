@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth";
-import { generateOptimalBuddyMatches } from "@/lib/matching";
+import { generateGroupMatches } from "@/lib/matching";
 import { prisma } from "@/lib/prisma";
 
 export async function POST() {
@@ -38,24 +38,28 @@ export async function POST() {
       );
     }
 
-    const generated = generateOptimalBuddyMatches(participants);
+    const generated = generateGroupMatches(participants);
 
     const result = await prisma.$transaction(async (tx) => {
       const round = await tx.matchRound.create({
         data: {
           createdById: session.sub,
+          published: false,
         },
       });
 
-      await tx.match.createMany({
-        data: generated.map((item) => ({
-          roundId: round.id,
-          personAId: item.personAId,
-          personBId: item.personBId,
-          score: item.score,
-          reason: item.reason,
-        })),
-      });
+      for (const group of generated) {
+        await tx.matchGroup.create({
+          data: {
+            roundId: round.id,
+            score: group.score,
+            reason: group.reason,
+            members: {
+              create: group.memberIds.map((uid) => ({ userId: uid })),
+            },
+          },
+        });
+      }
 
       return {
         roundId: round.id,

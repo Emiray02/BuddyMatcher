@@ -51,9 +51,11 @@ type MeResponse = {
 
 type MatchResponse = {
   match: {
+    groupId: string;
     score: number;
-    reason: string;
-    buddy: {
+    reason: string | null;
+    buddies: Array<{
+      id: string;
       name: string;
       email: string;
       avatarUrl: string | null;
@@ -63,7 +65,7 @@ type MatchResponse = {
       instagramUrl: string | null;
       linkedinUrl: string | null;
       xUrl: string | null;
-    };
+    }>;
   } | null;
 };
 
@@ -84,6 +86,30 @@ type AdminPrivateAnswersResponse = {
       travelAfterProgram: boolean;
     } | null;
   }>;
+};
+
+type AdminGroupMember = {
+  id: string;
+  name: string;
+  email: string;
+  country: "TR" | "DE" | null;
+  avatarUrl: string | null;
+};
+
+type AdminGroup = {
+  id: string;
+  score: number;
+  reason: string | null;
+  members: AdminGroupMember[];
+};
+
+type AdminGroupsResponse = {
+  round: {
+    id: string;
+    published: boolean;
+    publishedAt: string | null;
+    groups: AdminGroup[];
+  } | null;
 };
 
 const likertScale: Array<1 | 2 | 3 | 4 | 5> = [1, 2, 3, 4, 5];
@@ -120,6 +146,9 @@ export default function DashboardPage() {
   const [showPrivateAnswersModal, setShowPrivateAnswersModal] = useState(false);
 
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [adminRound, setAdminRound] = useState<AdminGroupsResponse["round"]>(null);
+  const [editingGroup, setEditingGroup] = useState<AdminGroup | null>(null);
+  const [editGroupMemberIds, setEditGroupMemberIds] = useState<string[]>([]);
 
   const loadAdminAnswers = useCallback(async () => {
     const response = await fetch("/api/admin/private-answers");
@@ -129,6 +158,16 @@ export default function DashboardPage() {
     }
     const data = (await response.json()) as AdminPrivateAnswersResponse;
     setAdminUsers(data.users ?? []);
+  }, []);
+
+  const loadAdminGroups = useCallback(async () => {
+    const response = await fetch("/api/admin/groups");
+    if (!response.ok) {
+      setAdminRound(null);
+      return;
+    }
+    const data = (await response.json()) as AdminGroupsResponse;
+    setAdminRound(data.round ?? null);
   }, []);
 
   const loadData = useCallback(async () => {
@@ -186,6 +225,7 @@ export default function DashboardPage() {
 
     if (me.user?.role === "ADMIN") {
       await loadAdminAnswers();
+      await loadAdminGroups();
     } else {
       setAdminUsers([]);
     }
@@ -197,7 +237,7 @@ export default function DashboardPage() {
     }
 
     setLoading(false);
-  }, [loadAdminAnswers, t.pleaseLogin]);
+  }, [loadAdminAnswers, loadAdminGroups, t.pleaseLogin]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -422,14 +462,61 @@ export default function DashboardPage() {
         setMessage(`${count} ${t.usersMissingProfile}`);
       } else if (errorCode === "MISSING_PHOTOS") {
         setMessage(`${count} ${t.usersMissingPhoto}`);
+      } else if (errorCode === "MATCHING_FAILED") {
+        setMessage(data.error ?? t.matchingFailed);
       } else {
         setMessage(t.matchingFailed);
       }
       return;
     }
 
-    setMessage(`${t.matchingDone}: ${data.count}`);
+    setMessage(`${t.matchingDoneGroups}: ${data.count}`);
+    await loadAdminGroups();
+  }
+
+  async function publishResults() {
+    const response = await fetch("/api/admin/publish", { method: "POST" });
+    const data = await response.json();
+
+    if (!response.ok) {
+      setMessage(t.publishFailed);
+      return;
+    }
+
+    if (data.alreadyPublished) {
+      setMessage(t.alreadyPublished);
+    } else {
+      setMessage(t.publishSuccess);
+    }
+    await loadAdminGroups();
     await loadData();
+  }
+
+  function openEditGroup(group: AdminGroup) {
+    const trMembers = group.members.filter((m) => m.country === "TR");
+    const deMembers = group.members.filter((m) => m.country === "DE");
+    setEditGroupMemberIds([
+      trMembers[0]?.id ?? "",
+      trMembers[1]?.id ?? "",
+      deMembers[0]?.id ?? "",
+    ]);
+    setEditingGroup(group);
+  }
+
+  async function saveGroupEdit() {
+    if (!editingGroup) return;
+    const response = await fetch(`/api/admin/groups/${editingGroup.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberIds: editGroupMemberIds }),
+    });
+    if (!response.ok) {
+      setMessage(t.groupEditFailed);
+      return;
+    }
+    setMessage(t.groupSaved);
+    setEditingGroup(null);
+    await loadAdminGroups();
   }
 
   async function toggleAnswerPermission(userId: string, allowEditAnswers: boolean) {
@@ -804,25 +891,29 @@ export default function DashboardPage() {
             ) : null}
 
             <article className="panel p-5 sm:p-6">
-              <h2 className="text-2xl text-slate-900">{t.yourBuddy}</h2>
+              <h2 className="text-2xl text-slate-900">{t.yourBuddies}</h2>
               {!user.profile ? (
                 <p className="muted mt-3">{t.noProfileMatch}</p>
               ) : matchData ? (
-                <div className="mt-3 space-y-2">
-                  {matchData.buddy.avatarUrl ? <img src={matchData.buddy.avatarUrl} alt={matchData.buddy.name} className="h-24 w-24 rounded-xl object-cover" /> : null}
-                  <p className="text-lg font-semibold text-slate-900">{matchData.buddy.name}</p>
-                  <p className="muted text-sm">{matchData.buddy.email}</p>
-                  <p className="muted text-sm">{matchData.buddy.country}</p>
-                  <p className="text-sm text-slate-700">{matchData.buddy.bio || "-"}</p>
-                  <SocialLinks
-                    className="pt-1"
-                    instagramUrl={matchData.buddy.instagramUrl}
-                    linkedinUrl={matchData.buddy.linkedinUrl}
-                    xUrl={matchData.buddy.xUrl}
-                  />
-                  <div className="flex flex-wrap gap-2">
-                    {matchData.buddy.publicTags.map((tag) => <span className="chip" key={tag}>{tag}</span>)}
-                  </div>
+                <div className="mt-3 space-y-4">
+                  {matchData.buddies.map((buddy) => (
+                    <div key={buddy.id} className="rounded-xl border border-slate-100 bg-slate-50 p-3 space-y-1">
+                      {buddy.avatarUrl ? <img src={buddy.avatarUrl} alt={buddy.name} className="h-20 w-20 rounded-xl object-cover" /> : null}
+                      <p className="text-base font-semibold text-slate-900">{buddy.name}</p>
+                      <p className="muted text-sm">{buddy.email}</p>
+                      <p className="muted text-sm">{buddy.country}</p>
+                      <p className="text-sm text-slate-700">{buddy.bio || "-"}</p>
+                      <SocialLinks
+                        className="pt-1"
+                        instagramUrl={buddy.instagramUrl}
+                        linkedinUrl={buddy.linkedinUrl}
+                        xUrl={buddy.xUrl}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        {buddy.publicTags.map((tag) => <span className="chip" key={tag}>{tag}</span>)}
+                      </div>
+                    </div>
+                  ))}
                   <p className="status text-sm">{t.score}: {matchData.score.toFixed(1)}</p>
                   <p className="muted text-sm">{matchData.reason}</p>
                 </div>
@@ -837,8 +928,50 @@ export default function DashboardPage() {
                 <div className="mt-4 space-y-3">
                   <input type="file" accept=".csv,text/csv" onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)} className="field" />
                   <button className="btn-ghost w-full px-4 py-3" onClick={importCsv}>{t.importCsv}</button>
-                  <button className="btn-primary w-full px-4 py-3" onClick={runMatching}>{t.runMatching}</button>
+                  <div className="flex gap-2">
+                    <button className="btn-primary flex-1 px-4 py-3" onClick={runMatching}>{t.matchPeople}</button>
+                    <button
+                      className="btn-ghost flex-1 px-4 py-3"
+                      onClick={publishResults}
+                      disabled={!adminRound || adminRound.published}
+                    >
+                      {t.publishResults}
+                    </button>
+                  </div>
                   <p className="muted text-xs">{t.csvColumns}: name,email,country,openness,conscientiousness,extraversion,agreeableness,neuroticism,interests,bio,avatarUrl,instagramUrl,linkedinUrl,xUrl,travelAfterProgram,password</p>
+                </div>
+              </article>
+            ) : null}
+
+            {user.role === "ADMIN" && adminRound ? (
+              <article className="panel p-5 sm:p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-xl text-slate-900">{t.adminGroups}</h3>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${adminRound.published ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                    {adminRound.published ? t.publishedNote : t.unpublishedNote}
+                  </span>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {adminRound.groups.map((group, idx) => (
+                    <div key={group.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-semibold text-slate-800">Group {idx + 1} — {group.score.toFixed(1)} pts</p>
+                        {!adminRound.published ? (
+                          <button className="btn-ghost px-3 py-1 text-xs" onClick={() => openEditGroup(group)}>
+                            {t.editGroup}
+                          </button>
+                        ) : null}
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {group.members.map((m) => (
+                          <span key={m.id} className="chip text-xs">
+                            {m.name} ({m.country ?? "?"})
+                          </span>
+                        ))}
+                      </div>
+                      {group.reason ? <p className="muted mt-1 text-xs">{group.reason}</p> : null}
+                    </div>
+                  ))}
                 </div>
               </article>
             ) : null}
@@ -898,6 +1031,64 @@ export default function DashboardPage() {
             failedLabel: t.cropFailed,
           }}
         />
+
+        {editingGroup ? (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 px-4 py-5 backdrop-blur-sm">
+            <div className="panel w-full max-w-sm p-5 sm:p-6">
+              <h3 className="text-xl text-slate-900">{t.editGroup} — Group</h3>
+              <div className="mt-4 space-y-3">
+                {([0, 1] as const).map((slot) => (
+                  <div key={slot}>
+                    <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                      {t.trMember} {slot + 1}
+                    </label>
+                    <select
+                      className="field-select"
+                      value={editGroupMemberIds[slot] ?? ""}
+                      onChange={(e) => {
+                        const updated = [...editGroupMemberIds];
+                        updated[slot] = e.target.value;
+                        setEditGroupMemberIds(updated);
+                      }}
+                    >
+                      <option value="">—</option>
+                      {adminUsers
+                        .filter((u) => u.profile?.country === "TR")
+                        .map((u) => (
+                          <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                        ))}
+                    </select>
+                  </div>
+                ))}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                    {t.deMember}
+                  </label>
+                  <select
+                    className="field-select"
+                    value={editGroupMemberIds[2] ?? ""}
+                    onChange={(e) => {
+                      const updated = [...editGroupMemberIds];
+                      updated[2] = e.target.value;
+                      setEditGroupMemberIds(updated);
+                    }}
+                  >
+                    <option value="">—</option>
+                    {adminUsers
+                      .filter((u) => u.profile?.country === "DE")
+                      .map((u) => (
+                        <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+              <div className="mt-4 flex gap-2">
+                <button className="btn-primary flex-1 px-4 py-2" onClick={saveGroupEdit}>{t.saveGroup}</button>
+                <button className="btn-ghost flex-1 px-4 py-2" onClick={() => setEditingGroup(null)}>{t.closePrivateAnswersModal}</button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {message ? <p className="status mt-4 text-sm">{message}</p> : null}
       </div>
