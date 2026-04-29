@@ -21,6 +21,7 @@ export async function GET() {
         profile: {
           select: {
             answersEditable: true,
+            includedInMatching: true,
             country: true,
             openness: true,
             conscientiousness: true,

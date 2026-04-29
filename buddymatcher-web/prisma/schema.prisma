@@ -59,6 +59,7 @@ model Profile {
   xUrl                String   @default("")
   publicTags          String[] @default([])
   answersEditable     Boolean  @default(true)
+  includedInMatching  Boolean  @default(true)
   country             Country
   openness            Int
   conscientiousness   Int

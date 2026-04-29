@@ -9,7 +9,10 @@ export async function POST() {
     const session = await requireAdmin();
 
     const participants = await prisma.user.findMany({
-      where: { role: "USER" },
+      where: {
+        role: "USER",
+        profile: { includedInMatching: true },
+      },
       include: { profile: true },
       orderBy: { createdAt: "asc" },
     });

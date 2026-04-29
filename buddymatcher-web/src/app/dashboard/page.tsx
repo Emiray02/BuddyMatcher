@@ -76,6 +76,7 @@ type AdminPrivateAnswersResponse = {
     email: string;
     profile: {
       answersEditable: boolean;
+      includedInMatching: boolean;
       country: "TR" | "DE";
       openness: number;
       conscientiousness: number;
@@ -536,6 +537,21 @@ export default function DashboardPage() {
     await loadData();
   }
 
+  async function toggleMatchingSelection(userId: string, includedInMatching: boolean) {
+    const response = await fetch("/api/admin/matching-selection", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, includedInMatching }),
+    });
+
+    if (!response.ok) {
+      setMessage(t.permissionUpdateFailed);
+      return;
+    }
+
+    await loadAdminAnswers();
+  }
+
   if (loading && !user) {
     return (
       <div className="app-shell">
@@ -587,6 +603,7 @@ export default function DashboardPage() {
         </header>
 
         <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+          {user.role !== "ADMIN" ? (
           <section className="flex flex-col gap-5">
             <article className="panel p-5 sm:p-6">
               <h2 className="text-2xl text-slate-900">{t.publicProfileSection}</h2>
@@ -853,6 +870,7 @@ export default function DashboardPage() {
               </div>
             ) : null}
           </section>
+          ) : null}
 
           <section className="flex flex-col gap-5">
             {showChangePassword ? (
@@ -890,6 +908,7 @@ export default function DashboardPage() {
               </article>
             ) : null}
 
+            {user.role !== "ADMIN" ? (
             <article className="panel p-5 sm:p-6">
               <h2 className="text-2xl text-slate-900">{t.yourBuddies}</h2>
               {!user.profile ? (
@@ -921,6 +940,7 @@ export default function DashboardPage() {
                 <p className="muted mt-3">{t.noMatchYet}</p>
               )}
             </article>
+            ) : null}
 
             {user.role === "ADMIN" ? (
               <article className="panel p-5 sm:p-6">
@@ -982,33 +1002,36 @@ export default function DashboardPage() {
                 <div className="mt-4 space-y-3">
                   {adminUsers.map((item) => (
                     <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-3">
-                      <p className="font-semibold text-slate-800">{item.name}</p>
-                      <p className="muted text-xs">{item.email}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-slate-800">{item.name}</p>
+                          <p className="muted text-xs">{item.email}</p>
+                          {item.profile ? (
+                            <p className="muted mt-1 text-xs">{item.profile.country}</p>
+                          ) : (
+                            <p className="muted mt-1 text-xs">{t.profileMissing}</p>
+                          )}
+                        </div>
+                        {item.profile ? (
+                          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 select-none">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 accent-amber-500"
+                              checked={item.profile.includedInMatching}
+                              onChange={(e) => void toggleMatchingSelection(item.id, e.target.checked)}
+                            />
+                            {t.addToBuddySelection}
+                          </label>
+                        ) : null}
+                      </div>
                       {item.profile ? (
-                        (() => {
-                          const adminScores = getSurveyScoresFromLegacyProfile({
-                            openness: item.profile.openness,
-                            conscientiousness: item.profile.conscientiousness,
-                            extraversion: item.profile.extraversion,
-                            agreeableness: item.profile.agreeableness,
-                            neuroticism: item.profile.neuroticism,
-                            interests: item.profile.interests,
-                            travelAfterProgram: item.profile.travelAfterProgram,
-                          });
-
-                          return (
-                            <>
-                              <p className="muted mt-2 text-xs">{item.profile.country} | Social:{adminScores.socialScore} Open:{adminScores.opennessScore} Flex:{adminScores.flexibilityScore} Structure:{adminScores.structureScore}</p>
-                              <p className="muted text-xs">Party:{adminScores.partyScore} Travel:{adminScores.travelStyleScore} Comm:{adminScores.communicationScore}</p>
-                              <button className="btn-ghost mt-2 px-3 py-2 text-sm" onClick={() => toggleAnswerPermission(item.id, !item.profile?.answersEditable)}>
-                                {item.profile.answersEditable ? t.lockEdit : t.allowEdit}
-                              </button>
-                            </>
-                          );
-                        })()
-                      ) : (
-                        <p className="muted mt-2 text-xs">{t.profileMissing}</p>
-                      )}
+                        <button
+                          className="btn-ghost mt-2 px-3 py-2 text-xs"
+                          onClick={() => void toggleAnswerPermission(item.id, !item.profile?.answersEditable)}
+                        >
+                          {item.profile.answersEditable ? t.lockEdit : t.allowEdit}
+                        </button>
+                      ) : null}
                     </div>
                   ))}
                 </div>
