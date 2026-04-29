@@ -209,8 +209,6 @@ export function generateOptimalBuddyMatches(participants: Participant[]): MatchR
 
   const assignment = hungarian(costMatrix);
 
-  const assignment = hungarian(costMatrix);
-
   return assignment.map((deIndex, trIndex) => {
     const trUser = tr[trIndex];
     const deUser = de[deIndex];
