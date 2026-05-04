@@ -416,7 +416,7 @@ export const text = {
     alreadyPublished: "Results are already published.",
     unpublishResults: "Unpublish Results",
     unpublishSuccess: "Results unpublished. You can edit groups again.",
-    unpublishFailed: "Failed to unpublish results.",,
+    unpublishFailed: "Failed to unpublish results.",
     adminGroups: "Matching Groups",
     matchingDoneGroups: "Matching completed. Group count",
     groupSaved: "Group saved.",
