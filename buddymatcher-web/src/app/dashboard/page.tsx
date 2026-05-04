@@ -498,6 +498,24 @@ export default function DashboardPage() {
     await loadData();
   }
 
+  async function unpublishResults() {
+    const response = await fetch("/api/admin/unpublish", { method: "POST" });
+    const data = await response.json();
+
+    if (!response.ok) {
+      setMessage(t.unpublishFailed);
+      return;
+    }
+
+    if (data.alreadyUnpublished) {
+      setMessage("Zaten yayından kaldırılmış.");
+    } else {
+      setMessage(t.unpublishSuccess);
+    }
+    await loadAdminGroups();
+    await loadData();
+  }
+
   function openEditGroup(group: AdminGroup) {
     const trMembers = group.members.filter((m) => m.country === "TR");
     const deMembers = group.members.filter((m) => m.country === "DE");
@@ -967,6 +985,13 @@ export default function DashboardPage() {
                       disabled={!adminRound || adminRound.published}
                     >
                       {t.publishResults}
+                    </button>
+                    <button
+                      className="btn-ghost flex-1 px-4 py-3 text-red-600"
+                      onClick={unpublishResults}
+                      disabled={!adminRound || !adminRound.published}
+                    >
+                      {t.unpublishResults}
                     </button>
                   </div>
                   {message ? <p className="status mt-2 text-sm">{message}</p> : null}
