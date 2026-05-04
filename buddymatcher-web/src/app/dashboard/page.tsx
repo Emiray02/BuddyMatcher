@@ -162,13 +162,18 @@ export default function DashboardPage() {
   }, []);
 
   const loadAdminGroups = useCallback(async () => {
-    const response = await fetch("/api/admin/groups");
-    if (!response.ok) {
-      setAdminRound(null);
-      return;
+    try {
+      const response = await fetch("/api/admin/groups");
+      if (!response.ok) {
+        const err = (await response.json().catch(() => ({}))) as { error?: string };
+        setMessage(`Gruplar yüklenemedi: ${err.error ?? response.status}`);
+        return;
+      }
+      const data = (await response.json()) as AdminGroupsResponse;
+      setAdminRound(data.round ?? null);
+    } catch {
+      setMessage("Gruplar yüklenirken ağ hatası oluştu.");
     }
-    const data = (await response.json()) as AdminGroupsResponse;
-    setAdminRound(data.round ?? null);
   }, []);
 
   const loadData = useCallback(async () => {
@@ -974,11 +979,20 @@ export default function DashboardPage() {
               <article className="panel p-5 sm:p-6">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-xl text-slate-900">{t.adminGroups}</h3>
-                  {adminRound ? (
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${adminRound.published ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-                      {adminRound.published ? t.publishedNote : t.unpublishedNote}
-                    </span>
-                  ) : null}
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="btn-ghost px-3 py-1 text-xs"
+                      onClick={() => { void loadAdminGroups(); }}
+                      title="Yenile"
+                    >
+                      ↻
+                    </button>
+                    {adminRound ? (
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${adminRound.published ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                        {adminRound.published ? t.publishedNote : t.unpublishedNote}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="mt-4 space-y-3">
                   {!adminRound ? (
