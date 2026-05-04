@@ -11,8 +11,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ gr
     const body = (await request.json()) as { memberIds: string[] };
     const { memberIds } = body;
 
-    if (!Array.isArray(memberIds) || memberIds.length !== 3) {
-      return NextResponse.json({ error: "3 üye gerekli.", errorCode: "INVALID_MEMBERS" }, { status: 400 });
+    if (!Array.isArray(memberIds) || memberIds.length < 2 || memberIds.length > 3) {
+      return NextResponse.json({ error: "2 veya 3 üye gerekli.", errorCode: "INVALID_MEMBERS" }, { status: 400 });
     }
 
     const users = await prisma.user.findMany({
@@ -20,16 +20,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ gr
       include: { profile: true },
     });
 
-    if (users.length !== 3) {
+    if (users.length !== memberIds.length) {
       return NextResponse.json({ error: "Kullanıcılar bulunamadı.", errorCode: "USERS_NOT_FOUND" }, { status: 400 });
     }
 
     const trCount = users.filter((u) => u.profile?.country === "TR").length;
     const deCount = users.filter((u) => u.profile?.country === "DE").length;
 
-    if (trCount !== 2 || deCount !== 1) {
+    if (deCount !== 1 || trCount < 1 || trCount > 2) {
       return NextResponse.json(
-        { error: "Grup 2 TR + 1 DE üyeden oluşmalı.", errorCode: "INVALID_COMPOSITION" },
+        { error: "Grup 1 DE + 1 veya 2 TR üyeden oluşmalı.", errorCode: "INVALID_COMPOSITION" },
         { status: 400 },
       );
     }

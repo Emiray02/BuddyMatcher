@@ -222,10 +222,10 @@ export function generateOptimalBuddyMatches(participants: Participant[]): MatchR
   });
 }
 
-// ── 2 TR + 1 DE group matching ────────────────────────────────────────────────
+// ── Flexible group matching (min 2, max 3 per group, 1 DE per group) ──────────
 
 export type GroupMatchResult = {
-  memberIds: string[]; // [TR1, TR2, DE]
+  memberIds: string[]; // [TR1, (TR2 optional), DE]
   score: number;
   reason: string;
 };
@@ -240,46 +240,58 @@ export function generateGroupMatches(participants: Participant[]): GroupMatchRes
     throw new Error("Eşleştirme için hem TR hem DE katılımcı gerekli.");
   }
 
-  if (tr.length !== de.length * 2) {
+  if (tr.length < de.length) {
     throw new Error(
-      `Grup eşleştirme için TR katılımcı sayısı DE sayısının tam 2 katı olmalı. (TR: ${tr.length}, DE: ${de.length})`,
+      `TR sayısı (${tr.length}) DE sayısından (${de.length}) az. Her DE için en az 1 TR gerekli.`,
     );
   }
 
-  // Duplicate DE entries → 2 slots per DE person (indices 0..N-1 and N..2N-1)
-  const deSlots = [...de, ...de];
+  if (tr.length > de.length * 2) {
+    throw new Error(
+      `TR sayısı (${tr.length}) DE sayısının 2 katından (${de.length * 2}) fazla. Grup başına en fazla 2 TR.`,
+    );
+  }
 
-  const costMatrix: number[][] = tr.map((trUser) =>
-    deSlots.map((deUser) => 100 - compatibilityScore(trUser.profile as Profile, deUser.profile as Profile)),
+  // Phase 1: Hungarian on (numDE rows) × (numTR cols) — each DE gets 1 TR
+  const phase1Cost: number[][] = de.map((deUser) =>
+    tr.map((trUser) => 100 - compatibilityScore(deUser.profile as Profile, trUser.profile as Profile)),
   );
+  const phase1Assignment = hungarian(phase1Cost); // phase1Assignment[deIdx] = trIdx
 
-  const assignment = hungarian(costMatrix);
+  const assignedTRIndices = new Set(phase1Assignment);
 
-  // Group TR members by their assigned DE person
-  const groupMap = new Map<string, { trs: Array<{ user: Participant; score: number }>; de: Participant }>();
-
-  assignment.forEach((deSlotIdx, trIdx) => {
-    const trUser = tr[trIdx];
-    const deUser = deSlots[deSlotIdx];
-    const score = 100 - costMatrix[trIdx][deSlotIdx];
-
-    if (!groupMap.has(deUser.id)) {
-      groupMap.set(deUser.id, { trs: [], de: deUser });
-    }
-    groupMap.get(deUser.id)!.trs.push({ user: trUser, score });
+  // Build initial groups (1 TR per group)
+  const groupMap = new Map<string, { trs: Participant[]; de: Participant }>();
+  phase1Assignment.forEach((trIdx, deIdx) => {
+    groupMap.set(de[deIdx].id, { trs: [tr[trIdx]], de: de[deIdx] });
   });
 
+  // Phase 2: greedily assign remaining TR to best-fit group with capacity < 2
+  const remainingTR = tr.filter((_, i) => !assignedTRIndices.has(i));
+  for (const trUser of remainingTR) {
+    let bestDEId = "";
+    let bestScore = -1;
+    for (const deUser of de) {
+      const group = groupMap.get(deUser.id)!;
+      if (group.trs.length < 2) {
+        const score = compatibilityScore(trUser.profile as Profile, deUser.profile as Profile);
+        if (score > bestScore) {
+          bestScore = score;
+          bestDEId = deUser.id;
+        }
+      }
+    }
+    if (bestDEId) groupMap.get(bestDEId)!.trs.push(trUser);
+  }
+
   return Array.from(groupMap.values()).map(({ trs, de: deUser }) => {
-    const avgScore = trs.reduce((s, t) => s + t.score, 0) / trs.length;
-    const tr1deScore = trs[0]?.score.toFixed(1) ?? "?";
-    const tr2deScore = trs[1]?.score.toFixed(1) ?? "?";
-    const tr1tr2Score = trs.length >= 2
-      ? compatibilityScore(trs[0].user.profile as Profile, trs[1].user.profile as Profile).toFixed(1)
-      : "?";
-    const reason = `Group compatibility: ${clampScore(avgScore).toFixed(1)}. TR1↔DE: ${tr1deScore}, TR2↔DE: ${tr2deScore}, TR1↔TR2: ${tr1tr2Score}.`;
+    const scores = trs.map((t) => compatibilityScore(t.profile as Profile, deUser.profile as Profile));
+    const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+    const scoreText = scores.map((s, i) => `TR${i + 1}↔DE: ${s.toFixed(1)}`).join(", ");
+    const reason = `Group avg: ${clampScore(avgScore).toFixed(1)}. ${scoreText}.`;
 
     return {
-      memberIds: [trs[0].user.id, trs[1].user.id, deUser.id],
+      memberIds: [...trs.map((t) => t.id), deUser.id],
       score: clampScore(avgScore),
       reason,
     };

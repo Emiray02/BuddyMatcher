@@ -506,13 +506,19 @@ export default function DashboardPage() {
 
   async function saveGroupEdit() {
     if (!editingGroup) return;
+    const memberIds = editGroupMemberIds.filter((id) => id !== "");
+    if (memberIds.length < 2) {
+      setMessage("En az 1 TR + 1 DE seçmelisiniz.");
+      return;
+    }
     const response = await fetch(`/api/admin/groups/${editingGroup.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ memberIds: editGroupMemberIds }),
+      body: JSON.stringify({ memberIds }),
     });
+    const data = await response.json();
     if (!response.ok) {
-      setMessage(t.groupEditFailed);
+      setMessage((data.error as string | undefined) ?? t.groupEditFailed);
       return;
     }
     setMessage(t.groupSaved);
@@ -958,40 +964,49 @@ export default function DashboardPage() {
                       {t.publishResults}
                     </button>
                   </div>
+                  {message ? <p className="status mt-2 text-sm">{message}</p> : null}
                   <p className="muted text-xs">{t.csvColumns}: name,email,country,openness,conscientiousness,extraversion,agreeableness,neuroticism,interests,bio,avatarUrl,instagramUrl,linkedinUrl,xUrl,travelAfterProgram,password</p>
                 </div>
               </article>
             ) : null}
 
-            {user.role === "ADMIN" && adminRound ? (
+            {user.role === "ADMIN" ? (
               <article className="panel p-5 sm:p-6">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-xl text-slate-900">{t.adminGroups}</h3>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${adminRound.published ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-                    {adminRound.published ? t.publishedNote : t.unpublishedNote}
-                  </span>
+                  {adminRound ? (
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${adminRound.published ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                      {adminRound.published ? t.publishedNote : t.unpublishedNote}
+                    </span>
+                  ) : null}
                 </div>
                 <div className="mt-4 space-y-3">
-                  {adminRound.groups.map((group, idx) => (
-                    <div key={group.id} className="rounded-xl border border-slate-200 bg-white p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-slate-800">Group {idx + 1} — {group.score.toFixed(1)} pts</p>
-                        {!adminRound.published ? (
-                          <button className="btn-ghost px-3 py-1 text-xs" onClick={() => openEditGroup(group)}>
-                            {t.editGroup}
-                          </button>
-                        ) : null}
+                  {!adminRound ? (
+                    <p className="muted text-sm">{t.noMatchYet}</p>
+                  ) : adminRound.groups.length === 0 ? (
+                    <p className="muted text-sm">{t.noMatchYet}</p>
+                  ) : (
+                    adminRound.groups.map((group, idx) => (
+                      <div key={group.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-semibold text-slate-800">Group {idx + 1} — {group.score.toFixed(1)} pts</p>
+                          {!adminRound.published ? (
+                            <button className="btn-ghost px-3 py-1 text-xs" onClick={() => openEditGroup(group)}>
+                              {t.editGroup}
+                            </button>
+                          ) : null}
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {group.members.map((m) => (
+                            <span key={m.id} className="chip text-xs">
+                              {m.name} ({m.country ?? "?"})
+                            </span>
+                          ))}
+                        </div>
+                        {group.reason ? <p className="muted mt-1 text-xs">{group.reason}</p> : null}
                       </div>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {group.members.map((m) => (
-                          <span key={m.id} className="chip text-xs">
-                            {m.name} ({m.country ?? "?"})
-                          </span>
-                        ))}
-                      </div>
-                      {group.reason ? <p className="muted mt-1 text-xs">{group.reason}</p> : null}
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </article>
             ) : null}
@@ -1063,7 +1078,7 @@ export default function DashboardPage() {
                 {([0, 1] as const).map((slot) => (
                   <div key={slot}>
                     <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
-                      {t.trMember} {slot + 1}
+                      {t.trMember} {slot + 1}{slot === 1 ? " (isteğe bağlı)" : ""}
                     </label>
                     <select
                       className="field-select"
@@ -1074,7 +1089,7 @@ export default function DashboardPage() {
                         setEditGroupMemberIds(updated);
                       }}
                     >
-                      <option value="">—</option>
+                      <option value="">— Boş</option>
                       {adminUsers
                         .filter((u) => u.profile?.country === "TR")
                         .map((u) => (
